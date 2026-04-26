@@ -38,6 +38,26 @@ async def init_db() -> None:
             await db.execute(statement)
         except Exception:
             pass
+    await db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS simulated_user_locations (
+          id             INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id        INTEGER UNIQUE NOT NULL REFERENCES users(id),
+          latitude       REAL NOT NULL,
+          longitude      REAL NOT NULL,
+          movement_state TEXT DEFAULT 'walking' CHECK(movement_state IN ('static','walking','moving_fast')),
+          anchor_shop_id INTEGER REFERENCES shops(id),
+          last_seen_at   TEXT DEFAULT (datetime('now')),
+          is_active      INTEGER DEFAULT 1
+        )
+        """
+    )
+    await db.execute(
+        "CREATE INDEX IF NOT EXISTS idx_simulated_users_shop_time ON simulated_user_locations(anchor_shop_id, last_seen_at)"
+    )
+    await db.execute(
+        "CREATE INDEX IF NOT EXISTS idx_simulated_users_last_seen ON simulated_user_locations(last_seen_at)"
+    )
     await db.commit()
 
 

@@ -129,11 +129,27 @@ CREATE TABLE IF NOT EXISTS shop_visits (
   UNIQUE(shop_id, user_id, visit_date)
 );
 
+CREATE TABLE IF NOT EXISTS simulated_user_locations (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id        INTEGER UNIQUE NOT NULL REFERENCES users(id),
+  latitude       REAL NOT NULL,
+  longitude      REAL NOT NULL,
+  movement_state TEXT DEFAULT 'walking' CHECK(movement_state IN ('static','walking','moving_fast')),
+  anchor_shop_id INTEGER REFERENCES shops(id),
+  last_seen_at   TEXT DEFAULT (datetime('now')),
+  is_active      INTEGER DEFAULT 1
+);
+
 CREATE INDEX IF NOT EXISTS idx_coupons_token ON coupons(qr_token);
 CREATE INDEX IF NOT EXISTS idx_coupons_user  ON coupons(user_id);
 CREATE INDEX IF NOT EXISTS idx_payone_shop   ON payone_density(shop_id);
 CREATE INDEX IF NOT EXISTS idx_payone_time   ON payone_density(recorded_at);
 CREATE INDEX IF NOT EXISTS idx_shop_visits_shop_time ON shop_visits(shop_id, entered_at);
 CREATE INDEX IF NOT EXISTS idx_shop_visits_user_time ON shop_visits(user_id, entered_at);
+<<<<<<< Updated upstream
 CREATE INDEX IF NOT EXISTS idx_purchase_events_user ON purchase_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_purchase_events_shop ON purchase_events(shop_id, purchased_at);
+=======
+CREATE INDEX IF NOT EXISTS idx_simulated_users_shop_time ON simulated_user_locations(anchor_shop_id, last_seen_at);
+CREATE INDEX IF NOT EXISTS idx_simulated_users_last_seen ON simulated_user_locations(last_seen_at);
+>>>>>>> Stashed changes
