@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "City Wallet",
+    "slug": "city-wallet",
+    "version": "1.0.0",
+    "scheme": "citywallet",
+    "orientation": "portrait",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.citywallet.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "City Wallet uses your location to find nearby offers. Your raw coordinates are never stored.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "City Wallet tracks your location in the background so offers appear automatically as you walk past shops. Coordinates are never stored.",
+        "NSLocationAlwaysUsageDescription": "City Wallet tracks your location in the background so offers appear automatically as you walk past shops.",
+        "NSCameraUsageDescription": "City Wallet needs the camera to scan offer QR codes.",
+        "UIBackgroundModes": ["location", "fetch"]
+      }
+    },
+    "android": {
+      "package": "com.citywallet.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "",
+          "RNMapboxMapsVersion": "11.0.0"
+        }
+      ],
+      "expo-task-manager",
+      "expo-notifications",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "City Wallet uses your location to find nearby offers. Your raw coordinates are never stored.",
+          "locationAlwaysAndWhenInUsePermission": "City Wallet tracks your location in the background so offers appear automatically as you walk near shops.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "City Wallet needs camera access to scan QR codes at checkout."
+        }
+      ]
+    ]
+  }
+}
