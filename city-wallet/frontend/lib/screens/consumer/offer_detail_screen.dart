@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -18,6 +20,9 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
   Coupon? _coupon;
   bool _loading = true;
   bool _showWhyNow = false;
+  Timer? _pollTimer;
+  bool _redeemSuccessShown = false;
+  bool _qrOpen = false;
 
   @override
   void initState() {
@@ -29,10 +34,15 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
     try {
       final c = await context.read<ApiService>().getCoupon(int.parse(widget.offerId));
       if (mounted) {
+        final wasRedeemed = _coupon?.isRedeemed ?? false;
         setState(() {
           _coupon = c;
           _loading = false;
         });
+        _syncPolling();
+        if (!wasRedeemed && c.isRedeemed) {
+          _showRedeemedSuccess();
+        }
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
@@ -41,9 +51,10 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
 
   void _showQR() {
     if (_coupon?.qrToken == null) return;
+    _qrOpen = true;
     showDialog(
       context: context,
-      builder: (_) => Dialog(
+      builder: (dialogContext) => Dialog(
         backgroundColor: GameTheme.cream,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(GameTheme.radius),
@@ -73,16 +84,93 @@ class _OfferDetailScreenState extends State<OfferDetailScreen> {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Show this to the merchant',
+                'Show this to the merchant. We will update this screen when it is redeemed.',
                 style: TextStyle(color: GameTheme.bark, fontSize: 13, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) => _qrOpen = false);
+  }
+
+  void _syncPolling() {
+    if (_coupon?.isActive == true) {
+      _pollTimer ??= Timer.periodic(const Duration(seconds: 3), (_) => _load());
+    } else {
+      _pollTimer?.cancel();
+      _pollTimer = null;
+    }
+  }
+
+  void _showRedeemedSuccess() {
+    if (!mounted || _redeemSuccessShown) return;
+    _redeemSuccessShown = true;
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    if (_qrOpen) {
+      Navigator.of(context, rootNavigator: true).pop();
+      _qrOpen = false;
+    }
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: GameTheme.cream,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GameTheme.radius),
+          side: const BorderSide(color: GameTheme.bark, width: 3),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: GameTheme.grass,
+                  borderRadius: BorderRadius.circular(GameTheme.radius),
+                  border: Border.all(color: GameTheme.bark, width: 2),
+                ),
+                child: const Icon(Icons.check, color: Colors.white, size: 40),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Coupon Applied!',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: GameTheme.ink),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your offer was redeemed successfully and the cashback has been applied.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Awesome'),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   @override

@@ -23,6 +23,8 @@ class _MapScreenState extends State<MapScreen> {
   bool _loading = false;
   int _radius = 5000;
   Timer? _refreshTimer;
+  static const int _greenUserThreshold = 1;
+  static const int _orangeUserThreshold = 8;
 
   @override
   void initState() {
@@ -61,6 +63,18 @@ class _MapScreenState extends State<MapScreen> {
       case 'busy': return GameTheme.berry;
       default: return GameTheme.carrot;
     }
+  }
+
+  int _dummyUsersInStore(Shop shop) {
+    final geoHash = shop.lat.abs().round() + (shop.lng.abs() * 1000).round();
+    return ((shop.id * 11 + geoHash + shop.activeCouponCount * 3) % 12) + 1;
+  }
+
+  Color _shopMarkerColor(Shop shop) {
+    final usersInStore = _dummyUsersInStore(shop);
+    if (usersInStore <= _greenUserThreshold) return GameTheme.grass;
+    if (usersInStore <= 4) return GameTheme.carrot;
+    return GameTheme.berry;
   }
 
   @override
@@ -134,7 +148,7 @@ class _MapScreenState extends State<MapScreen> {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: _busynessColor(shop.busyness),
+                                color: _shopMarkerColor(shop),
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(color: GameTheme.bark, width: 2),
                                 boxShadow: const [BoxShadow(color: GameTheme.soil, blurRadius: 0, offset: Offset(3, 3))],
@@ -154,6 +168,19 @@ class _MapScreenState extends State<MapScreen> {
                                   style: const TextStyle(color: GameTheme.ink, fontSize: 10, fontWeight: FontWeight.w900),
                                 ),
                               ),
+                            Container(
+                              margin: const EdgeInsets.only(top: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: GameTheme.cream,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: GameTheme.bark),
+                              ),
+                              child: Text(
+                                '${_dummyUsersInStore(shop)}',
+                                style: const TextStyle(color: GameTheme.ink, fontSize: 9, fontWeight: FontWeight.w900),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -386,12 +413,15 @@ class _ShopCard extends StatelessWidget {
   final Shop shop;
   const _ShopCard({required this.shop});
 
-  Color get _busynessColor {
-    switch (shop.busyness) {
-      case 'quiet': return GameTheme.grass;
-      case 'busy': return GameTheme.berry;
-      default: return GameTheme.carrot;
-    }
+  int get _dummyUsersInStore {
+    final geoHash = shop.lat.abs().round() + (shop.lng.abs() * 1000).round();
+    return ((shop.id * 11 + geoHash + shop.activeCouponCount * 3) % 12) + 1;
+  }
+
+  Color get _markerColor {
+    if (_dummyUsersInStore <= _MapScreenState._greenUserThreshold) return GameTheme.grass;
+    if (_dummyUsersInStore <= 4) return GameTheme.carrot;
+    return GameTheme.berry;
   }
 
   @override
@@ -420,10 +450,13 @@ class _ShopCard extends StatelessWidget {
               children: [
                 Container(
                   width: 8, height: 8,
-                  decoration: BoxDecoration(color: _busynessColor, shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: _markerColor, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 4),
-                Text(shop.busyness, style: const TextStyle(color: GameTheme.ink, fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(
+                  '$_dummyUsersInStore users',
+                  style: const TextStyle(color: GameTheme.ink, fontSize: 12, fontWeight: FontWeight.w700),
+                ),
                 const Spacer(),
                 if (shop.activeCouponCount > 0)
                   Container(

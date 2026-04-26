@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     openweather_api_key: str = ""
     eventbrite_token: str = ""
     mapbox_token: str = ""
-    gemma_base_url: str = "http://localhost:11434"
+    gemma_base_url: str = "http://10.161.99.232:11434"
     gemma_model: str = "gemma3:1b"
     gemma_enabled: bool = True
     stripe_secret_key: str = ""

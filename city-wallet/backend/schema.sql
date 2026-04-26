@@ -146,10 +146,7 @@ CREATE INDEX IF NOT EXISTS idx_payone_shop   ON payone_density(shop_id);
 CREATE INDEX IF NOT EXISTS idx_payone_time   ON payone_density(recorded_at);
 CREATE INDEX IF NOT EXISTS idx_shop_visits_shop_time ON shop_visits(shop_id, entered_at);
 CREATE INDEX IF NOT EXISTS idx_shop_visits_user_time ON shop_visits(user_id, entered_at);
-<<<<<<< Updated upstream
 CREATE INDEX IF NOT EXISTS idx_purchase_events_user ON purchase_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_purchase_events_shop ON purchase_events(shop_id, purchased_at);
-=======
 CREATE INDEX IF NOT EXISTS idx_simulated_users_shop_time ON simulated_user_locations(anchor_shop_id, last_seen_at);
 CREATE INDEX IF NOT EXISTS idx_simulated_users_last_seen ON simulated_user_locations(last_seen_at);
->>>>>>> Stashed changes

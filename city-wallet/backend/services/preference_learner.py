@@ -2,6 +2,51 @@ import json
 from database import get_db
 
 
+def _normalize_active_hours(raw_hours: object) -> list[int]:
+    """
+    Accept both the newer integer-hour format and older demo formats such as
+    ["12:00-14:00", "17:00-19:00"] or ["9", 14].
+    """
+    if not isinstance(raw_hours, list):
+        return []
+
+    hours: set[int] = set()
+    for entry in raw_hours:
+        if isinstance(entry, int):
+            if 0 <= entry <= 23:
+                hours.add(entry)
+            continue
+
+        if isinstance(entry, float):
+            hour = int(entry)
+            if 0 <= hour <= 23:
+                hours.add(hour)
+            continue
+
+        if not isinstance(entry, str):
+            continue
+
+        value = entry.strip()
+        if not value:
+            continue
+
+        if value.isdigit():
+            hour = int(value)
+            if 0 <= hour <= 23:
+                hours.add(hour)
+            continue
+
+        if ":" in value:
+            start = value.split("-", 1)[0].strip()
+            start_hour = start.split(":", 1)[0].strip()
+            if start_hour.isdigit():
+                hour = int(start_hour)
+                if 0 <= hour <= 23:
+                    hours.add(hour)
+
+    return sorted(hours)
+
+
 async def update_after_redemption(
     user_id: int,
     shop_category: str,
@@ -31,7 +76,7 @@ async def update_after_redemption(
     else:
         affinity = json.loads(row["category_affinity"] or "{}")
         discount_range = json.loads(row["preferred_discount_range"] or '{"min":10,"max":25}')
-        hours = json.loads(row["active_hours"] or "[]")
+        hours = _normalize_active_hours(json.loads(row["active_hours"] or "[]"))
         product_affinity = json.loads(row["product_affinity"] or "{}")
         avg_spend = row["avg_spend_cents"] or 0
         purchase_count = row["purchase_count"] or 0
@@ -56,7 +101,7 @@ async def update_after_redemption(
     # Active hours: track which hours the user redeems
     if hour is not None and hour not in hours:
         hours.append(hour)
-    hours = sorted(set(hours))
+    hours = sorted({h for h in hours if isinstance(h, int) and 0 <= h <= 23})
 
     # Preferred discount range: drift toward seen discounts
     if discount_pct > 0:
@@ -114,7 +159,7 @@ async def get_preferences(user_id: int) -> dict:
     return {
         "category_affinity": json.loads(row["category_affinity"] or "{}"),
         "preferred_discount_range": json.loads(row["preferred_discount_range"] or '{"min":10,"max":25}'),
-        "active_hours": json.loads(row["active_hours"] or "[]"),
+        "active_hours": _normalize_active_hours(json.loads(row["active_hours"] or "[]")),
         "product_affinity": json.loads(row["product_affinity"] or "{}"),
         "avg_spend_cents": row["avg_spend_cents"] or 0,
         "purchase_count": row["purchase_count"] or 0,

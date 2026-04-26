@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db, close_db, get_db
 from config import settings
-from routes import auth, context, offers, coupons, products, merchants, wallet, analytics, shops, webhook
+from routes import auth, context, offers, coupons, products, merchants, wallet, analytics, shops, webhook, simulation
 from services.payone_simulator import update_density
 
 
@@ -55,6 +55,7 @@ app.include_router(merchants.router)
 app.include_router(wallet.router)
 app.include_router(analytics.router)
 app.include_router(shops.router)
+app.include_router(simulation.router)
 app.include_router(webhook.router)
 
 

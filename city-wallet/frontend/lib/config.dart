@@ -5,7 +5,7 @@ class Config {
     const env = String.fromEnvironment('API_BASE_URL');
     if (env.isNotEmpty) return env;
     if (!kDebugMode) return 'https://your-prod-api.com';
-    return kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000';
+    return 'http://10.170.176.8:8000';
   }
 
   static double? get debugLatitude {

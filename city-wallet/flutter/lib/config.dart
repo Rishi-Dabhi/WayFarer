@@ -4,7 +4,8 @@ class Config {
   static String get apiBaseUrl {
     const env = String.fromEnvironment('API_BASE_URL');
     if (env.isNotEmpty) return env;
-    return kDebugMode ? 'http://10.0.2.2:8000' : 'https://your-prod-api.com';
+    if (!kDebugMode) return 'https://your-prod-api.com';
+    return 'http://10.170.176.8:8000';
   }
 
   static const double demoLat = 48.7784;
