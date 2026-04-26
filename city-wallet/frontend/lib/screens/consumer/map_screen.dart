@@ -254,7 +254,6 @@ class _RadiusChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< Updated upstream
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       clipBehavior: Clip.none,
@@ -281,29 +280,6 @@ class _RadiusChips extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                   ),
-=======
-    return Row(
-      children: [500, 1000, 2000, 5000, 10000].map((r) {
-        final label = r >= 1000 ? '${r ~/ 1000}km' : '${r}m';
-        final isSelected = r == selected;
-        return Padding(
-          padding: const EdgeInsets.only(right: 6),
-          child: GestureDetector(
-            onTap: () => onSelected(r),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFF97316) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black87,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
->>>>>>> Stashed changes
                 ),
               ),
             ),
