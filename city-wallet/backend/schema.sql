@@ -103,7 +103,18 @@ CREATE TABLE IF NOT EXISTS payone_density (
   recorded_at TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS shop_visits (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  shop_id     INTEGER NOT NULL REFERENCES shops(id),
+  user_id     INTEGER NOT NULL REFERENCES users(id),
+  entered_at  TEXT DEFAULT (datetime('now')),
+  visit_date  TEXT NOT NULL DEFAULT (date('now')),
+  UNIQUE(shop_id, user_id, visit_date)
+);
+
 CREATE INDEX IF NOT EXISTS idx_coupons_token ON coupons(qr_token);
 CREATE INDEX IF NOT EXISTS idx_coupons_user  ON coupons(user_id);
 CREATE INDEX IF NOT EXISTS idx_payone_shop   ON payone_density(shop_id);
 CREATE INDEX IF NOT EXISTS idx_payone_time   ON payone_density(recorded_at);
+CREATE INDEX IF NOT EXISTS idx_shop_visits_shop_time ON shop_visits(shop_id, entered_at);
+CREATE INDEX IF NOT EXISTS idx_shop_visits_user_time ON shop_visits(user_id, entered_at);

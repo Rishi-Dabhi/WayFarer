@@ -123,11 +123,21 @@ class ApiService {
   // Merchants
   Future<Map<String, dynamic>> getMerchantShop(int merchantId) async {
     final res = await _dio.get('/api/merchants/shop/$merchantId');
-    return res.data;
+    final raw = res.data;
+    if (raw is List) {
+      if (raw.isEmpty) return {};
+      return Map<String, dynamic>.from(raw.first as Map);
+    }
+    return Map<String, dynamic>.from(raw as Map);
   }
 
   Future<void> updateShop(int shopId, Map<String, dynamic> data) =>
       _dio.put('/api/merchants/shop/$shopId', data: data);
+
+  Future<Map<String, dynamic>> createMerchantShop(Map<String, dynamic> data) async {
+    final res = await _dio.post('/api/merchants/shop', data: data);
+    return Map<String, dynamic>.from(res.data as Map);
+  }
 
   // Analytics
   Future<Map<String, dynamic>> getAnalytics(int shopId) async {

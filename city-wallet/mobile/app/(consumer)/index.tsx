@@ -44,6 +44,7 @@ export default function ConsumerMapHome() {
   const [selected, setSelected] = useState<MapShop | null>(null);
   const [autoStatus, setAutoStatus] = useState<string | null>(null);
   const lastAutoCheck = useRef(0);
+  const lastVisitPing = useRef(0);
 
   useEffect(() => {
     if (!selected && shops.length > 0) setSelected(shops[0]);
@@ -71,6 +72,22 @@ export default function ConsumerMapHome() {
 
     checkAutoCoupons().catch(() => {});
   }, [coords.lat, coords.lng, refresh]);
+
+  useEffect(() => {
+    async function trackStoreVisit() {
+      const now = Date.now();
+      if (now - lastVisitPing.current < 30_000) return;
+      lastVisitPing.current = now;
+
+      await api.post("/api/shops/visit-ping", {
+        lat: coords.lat,
+        lng: coords.lng,
+        radius_m: 40,
+      });
+    }
+
+    trackStoreVisit().catch(() => {});
+  }, [coords.lat, coords.lng]);
 
   return (
     <SafeAreaView style={styles.container}>

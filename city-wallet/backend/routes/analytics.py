@@ -54,6 +54,41 @@ async def merchant_analytics(shop_id: int, merchant: dict = Depends(require_merc
     ) as cur:
         wallet_spent_total = (await cur.fetchone())["total"]
 
+    async with db.execute(
+        "SELECT COUNT(DISTINCT user_id) as total FROM shop_visits "
+        "WHERE shop_id=? AND entered_at>=datetime('now','-14 days')",
+        (shop_id,),
+    ) as cur:
+        visitors_14d = (await cur.fetchone())["total"]
+
+    async with db.execute(
+        "SELECT COUNT(*) as total FROM shop_visits "
+        "WHERE shop_id=? AND entered_at>=datetime('now','-14 days')",
+        (shop_id,),
+    ) as cur:
+        visits_14d = (await cur.fetchone())["total"]
+
+    async with db.execute(
+        """
+        WITH RECURSIVE days(d) AS (
+            SELECT date('now','-13 days')
+            UNION ALL
+            SELECT date(d, '+1 day') FROM days WHERE d < date('now')
+        )
+        SELECT
+            days.d AS day,
+            COALESCE(COUNT(DISTINCT sv.user_id), 0) AS visitors
+        FROM days
+        LEFT JOIN shop_visits sv
+            ON sv.shop_id=?
+            AND date(sv.entered_at)=days.d
+        GROUP BY days.d
+        ORDER BY days.d
+        """,
+        (shop_id,),
+    ) as cur:
+        visitors_by_day_14d = [dict(r) for r in await cur.fetchall()]
+
     # Coupons by hour (last 24h)
     async with db.execute(
         "SELECT strftime('%H',generated_at) as hour, COUNT(*) as count "
@@ -91,6 +126,9 @@ async def merchant_analytics(shop_id: int, merchant: dict = Depends(require_merc
         "avg_discount_pct": avg_discount,
         "wallet_spent_today_cents": wallet_spent_today,
         "wallet_spent_total_cents": wallet_spent_total,
+        "unique_visitors_last_14_days": visitors_14d,
+        "visits_last_14_days": visits_14d,
+        "visitors_by_day_14d": visitors_by_day_14d,
         "coupons_by_hour": by_hour,
         "top_products": top_products,
         "recent_redemptions": recent,

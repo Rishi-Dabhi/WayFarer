@@ -31,6 +31,10 @@ export default function MerchantLayout() {
         name="wallet"
         options={{ title: "Wallet", tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={size} color={color} /> }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{ title: "Profile", tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color} /> }}
+      />
       <Tabs.Screen name="analytics" options={{ href: null }} />
       <Tabs.Screen name="products/new" options={{ href: null }} />
     </Tabs>

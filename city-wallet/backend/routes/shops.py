@@ -1,8 +1,46 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
+from pydantic import BaseModel
 from database import get_db
 from services.payone_simulator import get_shop_busyness, haversine_m
+from middleware.auth import get_current_user
 
 router = APIRouter(prefix="/api/shops", tags=["shops"])
+
+
+class VisitPingIn(BaseModel):
+    lat: float
+    lng: float
+    radius_m: int = 40
+
+
+@router.post("/visit-ping")
+async def visit_ping(body: VisitPingIn, user: dict = Depends(get_current_user)):
+    """
+    Record a store visit when an authenticated consumer walks into a shop radius.
+    One visit is counted per user/shop/day to avoid inflation from frequent GPS updates.
+    """
+    if user.get("role") != "consumer":
+        raise HTTPException(403, "Consumer access required")
+
+    radius_m = max(10, min(body.radius_m, 150))
+    db = await get_db()
+    async with db.execute(
+        "SELECT id, latitude, longitude FROM shops WHERE is_active=1"
+    ) as cur:
+        rows = await cur.fetchall()
+
+    nearby_ids: list[int] = []
+    for row in rows:
+        distance_m = haversine_m(body.lat, body.lng, row["latitude"], row["longitude"])
+        if distance_m <= radius_m:
+            nearby_ids.append(row["id"])
+            await db.execute(
+                "INSERT OR IGNORE INTO shop_visits (shop_id, user_id) VALUES (?, ?)",
+                (row["id"], int(user["sub"])),
+            )
+
+    await db.commit()
+    return {"recorded_visits": len(nearby_ids), "nearby_shop_ids": nearby_ids}
 
 
 @router.get("/map")

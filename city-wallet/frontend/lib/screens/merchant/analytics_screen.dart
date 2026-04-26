@@ -74,6 +74,8 @@ class _StatsGrid extends StatelessWidget {
       ('Redeemed', '${data['redemptions_total'] ?? 0}'),
       ('Rate', '${data['redemption_rate_pct'] ?? 0}%'),
       ('Avg Discount', '${data['avg_discount_pct'] ?? 0}%'),
+      ('Visitors (14d)', '${data['unique_visitors_last_14_days'] ?? 0}'),
+      ('Visits (14d)', '${data['visits_last_14_days'] ?? 0}'),
     ];
     return GridView.count(
       crossAxisCount: 2,

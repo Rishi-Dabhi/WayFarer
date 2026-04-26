@@ -11,6 +11,8 @@ interface Analytics {
   redemption_rate_pct: number;
   avg_discount_pct: number;
   wallet_spent_total_cents: number;
+  unique_visitors_last_14_days: number;
+  visits_last_14_days: number;
   coupons_by_hour: Array<{ hour: number; count: number }>;
   top_products: Array<{ name: string; redemptions: number }>;
   recent_redemptions: Array<{ headline: string; cashback_cents: number; redeemed_at: string; discount_pct: number }>;
@@ -55,6 +57,8 @@ export default function AnalyticsScreen() {
               <StatBox label="Total Redeemed" value={analytics.redemptions_total} color="#4ADE80" />
               <StatBox label="Redemption Rate" value={`${analytics.redemption_rate_pct}%`} color="#F97316" />
               <StatBox label="Avg Discount" value={`${analytics.avg_discount_pct}%`} color="#A855F7" />
+              <StatBox label="Unique Visitors (14d)" value={analytics.unique_visitors_last_14_days} color="#22C55E" />
+              <StatBox label="Visits (14d)" value={analytics.visits_last_14_days} color="#EAB308" />
             </View>
 
             <View style={styles.totalSpent}>

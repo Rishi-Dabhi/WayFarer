@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, SafeAreaView, TextInput, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "@/services/api";
@@ -11,25 +11,39 @@ interface Analytics {
   redemption_rate_pct: number;
   avg_discount_pct: number;
   wallet_spent_today_cents: number;
+  unique_visitors_last_14_days: number;
   recent_redemptions: Array<{ headline: string; cashback_cents: number; redeemed_at: string; discount_pct: number }>;
 }
 
 export default function MerchantDashboard() {
   const router = useRouter();
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [shopId, setShopId] = useState<number | null>(null);
-  const [merchantId, setMerchantId] = useState<number | null>(null);
+  const [hasShop, setHasShop] = useState<boolean | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [submittingSetup, setSubmittingSetup] = useState(false);
+  const [shopName, setShopName] = useState("");
+  const [shopDescription, setShopDescription] = useState("");
+  const [shopCategory, setShopCategory] = useState("retail");
+  const [shopAddress, setShopAddress] = useState("");
+  const [shopLat, setShopLat] = useState("");
+  const [shopLng, setShopLng] = useState("");
+  const [maxDiscountPct, setMaxDiscountPct] = useState("15");
+  const [productName, setProductName] = useState("");
+  const [productDescription, setProductDescription] = useState("");
+  const [productPrice, setProductPrice] = useState("");
 
   const load = useCallback(async () => {
     const user = await getUser();
     if (!user) return;
     const mid = Number(user.user_id);
-    setMerchantId(mid);
     const { data: shops } = await api.get(`/api/merchants/shop/${mid}`);
-    if (shops.length === 0) return;
+    if (shops.length === 0) {
+      setHasShop(false);
+      setAnalytics(null);
+      return;
+    }
+    setHasShop(true);
     const sid = shops[0].id;
-    setShopId(sid);
     const { data } = await api.get(`/api/analytics/merchant/${sid}`);
     setAnalytics(data);
   }, []);
@@ -37,6 +51,59 @@ export default function MerchantDashboard() {
   useEffect(() => { load(); }, [load]);
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+
+  async function handleCreateStore() {
+    if (!shopName || !shopLat || !shopLng || !productName || !productPrice) {
+      Alert.alert("Missing fields", "Store name, lat/lng, first product name and price are required.");
+      return;
+    }
+
+    const lat = Number(shopLat);
+    const lng = Number(shopLng);
+    const discount = Number(maxDiscountPct);
+    const priceCents = Math.round(Number(productPrice) * 100);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      Alert.alert("Invalid location", "Please enter valid latitude and longitude.");
+      return;
+    }
+    if (!Number.isFinite(discount) || discount < 1 || discount > 100) {
+      Alert.alert("Invalid discount", "Discount percentage must be between 1 and 100.");
+      return;
+    }
+    if (!Number.isFinite(priceCents) || priceCents <= 0) {
+      Alert.alert("Invalid product price", "Please enter a valid price above 0.");
+      return;
+    }
+
+    setSubmittingSetup(true);
+    try {
+      const { data: shop } = await api.post("/api/merchants/shop", {
+        name: shopName,
+        description: shopDescription,
+        category: shopCategory,
+        latitude: lat,
+        longitude: lng,
+        address: shopAddress,
+        max_discount_pct: discount,
+      });
+
+      await api.post("/api/products", {
+        shop_id: shop.id,
+        name: productName,
+        description: productDescription,
+        price_cents: priceCents,
+        category: "other",
+        stock_level: "normal",
+      });
+
+      await load();
+      Alert.alert("Store created", "Your store, product, and campaign discount are now active.");
+    } catch {
+      Alert.alert("Setup failed", "Could not create your store. Please check your values and try again.");
+    } finally {
+      setSubmittingSetup(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -46,15 +113,63 @@ export default function MerchantDashboard() {
       >
         <Text style={styles.title}>Dashboard</Text>
 
-        {analytics ? (
+        {hasShop === false ? (
+          <View style={styles.setupCard}>
+            <Text style={styles.setupTitle}>Add your store</Text>
+            <Text style={styles.setupSub}>Your info and products here are used to build live promotional deals later.</Text>
+
+            <Text style={styles.label}>Store Name</Text>
+            <TextInput style={styles.input} value={shopName} onChangeText={setShopName} placeholder="e.g. City Beans" placeholderTextColor="#64748B" />
+
+            <Text style={styles.label}>Store Description</Text>
+            <TextInput style={styles.input} value={shopDescription} onChangeText={setShopDescription} placeholder="What makes your shop special?" placeholderTextColor="#64748B" />
+
+            <Text style={styles.label}>Category</Text>
+            <TextInput style={styles.input} value={shopCategory} onChangeText={setShopCategory} placeholder="retail, cafe, food..." placeholderTextColor="#64748B" />
+
+            <Text style={styles.label}>Address</Text>
+            <TextInput style={styles.input} value={shopAddress} onChangeText={setShopAddress} placeholder="Street and city" placeholderTextColor="#64748B" />
+
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Latitude</Text>
+                <TextInput style={styles.input} value={shopLat} onChangeText={setShopLat} keyboardType="decimal-pad" placeholder="48.7784" placeholderTextColor="#64748B" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Longitude</Text>
+                <TextInput style={styles.input} value={shopLng} onChangeText={setShopLng} keyboardType="decimal-pad" placeholder="9.1800" placeholderTextColor="#64748B" />
+              </View>
+            </View>
+
+            <Text style={styles.label}>Max Discount %</Text>
+            <TextInput style={styles.input} value={maxDiscountPct} onChangeText={setMaxDiscountPct} keyboardType="numeric" placeholder="15" placeholderTextColor="#64748B" />
+
+            <Text style={styles.setupTitle}>First Product</Text>
+            <Text style={styles.label}>Product Name</Text>
+            <TextInput style={styles.input} value={productName} onChangeText={setProductName} placeholder="e.g. Cappuccino" placeholderTextColor="#64748B" />
+
+            <Text style={styles.label}>Product Description</Text>
+            <TextInput style={styles.input} value={productDescription} onChangeText={setProductDescription} placeholder="Short product details" placeholderTextColor="#64748B" />
+
+            <Text style={styles.label}>Product Price (€)</Text>
+            <TextInput style={styles.input} value={productPrice} onChangeText={setProductPrice} keyboardType="decimal-pad" placeholder="3.50" placeholderTextColor="#64748B" />
+
+            <TouchableOpacity style={styles.primaryBtn} onPress={handleCreateStore} disabled={submittingSetup}>
+              <Text style={styles.primaryBtnText}>{submittingSetup ? "Creating..." : "Create Store"}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : analytics ? (
           <>
             <View style={styles.metricsRow}>
               <MetricCard label="Generated Today" value={analytics.coupons_generated_today} icon="flash" color="#3B82F6" />
               <MetricCard label="Redeemed Today" value={analytics.redemptions_today} icon="checkmark-circle" color="#4ADE80" />
             </View>
             <View style={styles.metricsRow}>
-              <MetricCard label="Redemption Rate" value={`${analytics.redemption_rate_pct}%`} icon="trending-up" color="#F97316" />
+              <MetricCard label="Visitors (14d)" value={analytics.unique_visitors_last_14_days} icon="people" color="#F97316" />
               <MetricCard label="Spent Today" value={`€${(analytics.wallet_spent_today_cents / 100).toFixed(2)}`} icon="wallet" color="#A855F7" />
+            </View>
+            <View style={styles.metricsRow}>
+              <MetricCard label="Redemption Rate" value={`${analytics.redemption_rate_pct}%`} icon="trending-up" color="#22C55E" />
             </View>
 
             <Text style={styles.sectionTitle}>Recent Redemptions</Text>
@@ -76,9 +191,11 @@ export default function MerchantDashboard() {
           <Text style={styles.empty}>Loading analytics...</Text>
         )}
 
-        <TouchableOpacity style={styles.analyticsBtn} onPress={() => router.push("/(merchant)/analytics")}>
-          <Text style={styles.analyticsBtnText}>View Full Analytics →</Text>
-        </TouchableOpacity>
+        {hasShop && (
+          <TouchableOpacity style={styles.analyticsBtn} onPress={() => router.push("/(merchant)/analytics")}>
+            <Text style={styles.analyticsBtnText}>View Full Analytics →</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -98,6 +215,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0F172A" },
   scroll: { padding: 16 },
   title: { color: "#F8FAFC", fontSize: 24, fontWeight: "800", marginBottom: 20 },
+  setupCard: { backgroundColor: "#1E293B", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#334155" },
+  setupTitle: { color: "#F8FAFC", fontSize: 18, fontWeight: "800", marginTop: 12, marginBottom: 8 },
+  setupSub: { color: "#94A3B8", fontSize: 12, lineHeight: 18, marginBottom: 8 },
+  label: { color: "#94A3B8", fontSize: 11, textTransform: "uppercase", marginTop: 12, marginBottom: 6, fontWeight: "700" },
+  input: { backgroundColor: "#0F172A", borderWidth: 1, borderColor: "#334155", color: "#F8FAFC", padding: 12, borderRadius: 10 },
+  row: { flexDirection: "row", gap: 10 },
+  primaryBtn: { marginTop: 18, backgroundColor: "#F97316", borderRadius: 12, padding: 14, alignItems: "center" },
+  primaryBtnText: { color: "#fff", fontWeight: "800" },
   metricsRow: { flexDirection: "row", gap: 12, marginBottom: 12 },
   metricCard: { flex: 1, backgroundColor: "#1E293B", borderRadius: 16, padding: 14, borderWidth: 1, gap: 6 },
   metricVal: { fontSize: 26, fontWeight: "800" },

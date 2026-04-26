@@ -22,8 +22,8 @@ import 'screens/merchant/analytics_screen.dart';
 import 'screens/merchant/campaign_screen.dart';
 import 'screens/merchant/dashboard_screen.dart';
 import 'screens/merchant/merchant_shell.dart';
-import 'screens/merchant/merchant_wallet_screen.dart';
 import 'screens/merchant/new_product_screen.dart';
+import 'screens/merchant/profile_screen.dart';
 import 'screens/merchant/products_screen.dart';
 import 'screens/merchant/scan_screen.dart';
 
@@ -168,7 +168,7 @@ class CityWalletApp extends StatelessWidget {
                 GoRoute(path: '/merchant/scan', builder: (_, __) => const ScanScreen()),
               ]),
               StatefulShellBranch(routes: [
-                GoRoute(path: '/merchant/wallet', builder: (_, __) => const MerchantWalletScreen()),
+                GoRoute(path: '/merchant/profile', builder: (_, __) => const MerchantProfileScreen()),
               ]),
             ],
           ),
