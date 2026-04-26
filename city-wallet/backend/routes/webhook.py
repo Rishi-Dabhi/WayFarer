@@ -53,7 +53,7 @@ async def stripe_webhook(request: Request):
             await send_push(
                 user["expo_push_token"] if user else None,
                 "Wallet topped up",
-                f"Your City Wallet balance increased by EUR {amount:.2f}.",
+                f"Your WayFarer balance increased by EUR {amount:.2f}.",
                 {"screen": "merchant_wallet"},
             )
 

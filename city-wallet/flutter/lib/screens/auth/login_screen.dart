@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 48),
               const Icon(Icons.location_city, size: 56, color: Color(0xFFF97316)),
               const SizedBox(height: 16),
-              const Text('City Wallet',
+              const Text('WayFarer',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),

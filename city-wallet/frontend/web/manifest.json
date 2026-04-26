@@ -1,6 +1,6 @@
 {
-    "name": "City Wallet",
-    "short_name": "City Wallet",
+    "name": "WayFarer",
+    "short_name": "WayFarer",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

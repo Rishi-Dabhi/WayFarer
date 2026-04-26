@@ -4,7 +4,7 @@ OpenStreetMap Overpass API wrapper.
 Used for two purposes:
   1. Enriching context signals with a real venue density count (how many
      cafés/shops are physically nearby — regardless of whether they're
-     registered in City Wallet).
+     registered in WayFarer).
   2. The seed_from_osm.py script queries this to auto-register real local
      shops before a demo.
 

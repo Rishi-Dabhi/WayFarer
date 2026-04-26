@@ -65,7 +65,7 @@ class _MerchantProfileScreenState extends State<MerchantProfileScreen> {
         await Stripe.instance.initPaymentSheet(
           paymentSheetParameters: SetupPaymentSheetParameters(
             paymentIntentClientSecret: clientSecret,
-            merchantDisplayName: 'City Wallet',
+            merchantDisplayName: 'WayFarer',
             style: ThemeMode.light,
           ),
         );

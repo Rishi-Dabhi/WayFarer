@@ -15,7 +15,7 @@ def _distance_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return 2 * radius * math.asin(math.sqrt(a))
 
 
-parser = argparse.ArgumentParser(description="List City Wallet shops in the local SQLite database")
+parser = argparse.ArgumentParser(description="List WayFarer shops in the local SQLite database")
 parser.add_argument("--lat", type=float)
 parser.add_argument("--lng", type=float)
 parser.add_argument("--radius", type=float, default=2000)

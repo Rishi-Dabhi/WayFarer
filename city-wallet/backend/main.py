@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db, close_db, get_db
@@ -37,7 +38,7 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-app = FastAPI(title="City Wallet API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="WayFarer API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

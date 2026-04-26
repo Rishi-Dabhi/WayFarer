@@ -185,7 +185,7 @@ class _TopBar extends StatelessWidget {
         children: [
           const Icon(Icons.location_city, color: Color(0xFFF97316)),
           const SizedBox(width: 8),
-          const Text('City Wallet', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('WayFarer', style: TextStyle(fontWeight: FontWeight.bold)),
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

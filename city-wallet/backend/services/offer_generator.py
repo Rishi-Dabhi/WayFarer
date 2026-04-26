@@ -2,7 +2,7 @@ import json
 import anthropic
 from config import settings
 
-SYSTEM_PROMPT = """You are the offer engine for City Wallet, a hyper-local AI wallet for inner-city merchants.
+SYSTEM_PROMPT = """You are the offer engine for WayFarer, a hyper-local AI wallet for inner-city merchants.
 You generate ONE specific, emotionally resonant offer for a real person in a real moment.
 This is not a coupon template. The offer must feel like it was written for this exact person,
 at this exact location, at this exact second.

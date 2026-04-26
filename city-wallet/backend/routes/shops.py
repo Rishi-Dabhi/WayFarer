@@ -50,7 +50,7 @@ async def map_shops(
     radius: int = Query(600),
     user_id: int | None = Query(None),
 ):
-    """Return registered City Wallet shops for the consumer map."""
+    """Return registered WayFarer shops for the consumer map."""
     db = await get_db()
     async with db.execute(
         "SELECT id, name, description, category, latitude, longitude, address FROM shops WHERE is_active=1"

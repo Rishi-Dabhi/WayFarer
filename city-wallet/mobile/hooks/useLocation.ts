@@ -118,7 +118,7 @@ export function useLocation(): LocationResult {
       timeInterval: BACKGROUND_TIME_INTERVAL_MS,
       showsBackgroundLocationIndicator: true,
       foregroundService: {
-        notificationTitle: "City Wallet",
+        notificationTitle: "WayFarer",
         notificationBody: "Tracking your location for nearby offers",
         notificationColor: "#3B82F6",
       },

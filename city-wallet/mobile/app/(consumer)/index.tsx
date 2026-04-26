@@ -93,7 +93,7 @@ export default function ConsumerMapHome() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>City Wallet</Text>
+          <Text style={styles.title}>WayFarer</Text>
           <Text style={styles.sub}>Nearby rewards around you</Text>
         </View>
         <TouchableOpacity style={styles.refresh} onPress={refresh}>

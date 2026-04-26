@@ -239,7 +239,7 @@ def _prompt(
             f"{weather.get('condition', 'unknown')}"
         )
     return f"""
-You are City Wallet's creative local offer designer.
+You are WayFarer's creative local offer designer.
 Write ONE useful, vivid, playful coupon for this exact moment.
 Be artistic and surprising without becoming confusing.
 Return JSON only. No markdown.

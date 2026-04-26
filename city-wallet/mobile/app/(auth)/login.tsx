@@ -27,7 +27,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.inner}>
-        <Text style={styles.logo}>City Wallet</Text>
+        <Text style={styles.logo}>WayFarer</Text>
         <Text style={styles.sub}>Hyper-local offers, generated for you</Text>
 
         <TextInput

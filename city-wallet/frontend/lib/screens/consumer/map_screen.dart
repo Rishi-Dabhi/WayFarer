@@ -25,6 +25,9 @@ class _MapScreenState extends State<MapScreen> {
   Timer? _refreshTimer;
   static const int _greenUserThreshold = 1;
   static const int _orangeUserThreshold = 8;
+  static const double _demoLat = 51.5042;
+  static const double _demoLng = -0.1050;
+  LatLng? _overrideCenter;
 
   @override
   void initState() {
@@ -49,8 +52,23 @@ class _MapScreenState extends State<MapScreen> {
       final api = context.read<ApiService>();
       final userId = context.read<AuthProvider>().user?.id;
       await api.autoNearbyCoupons(loc.lat!, loc.lng!, userId: userId, radius: _radius);
-      final shops = await api.getMapShops(loc.lat!, loc.lng!, radius: _radius, userId: userId);
-      if (mounted) setState(() => _shops = shops);
+      var shops = await api.getMapShops(loc.lat!, loc.lng!, radius: _radius, userId: userId);
+      LatLng? centerOverride;
+
+      if (shops.isEmpty) {
+        await api.autoNearbyCoupons(_demoLat, _demoLng, userId: userId, radius: _radius, maxCoupons: 3);
+        shops = await api.getMapShops(_demoLat, _demoLng, radius: _radius, userId: userId);
+        if (shops.isNotEmpty) {
+          centerOverride = const LatLng(_demoLat, _demoLng);
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _shops = shops;
+          _overrideCenter = centerOverride;
+        });
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -93,7 +111,7 @@ class _MapScreenState extends State<MapScreen> {
                 const Text('Enable location to find nearby offers', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text(
-                  loc.error ?? 'City Wallet uses your current location instead of demo coordinates.',
+                  loc.error ?? 'WayFarer uses your current location instead of demo coordinates.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: GameTheme.bark),
                 ),
@@ -112,7 +130,7 @@ class _MapScreenState extends State<MapScreen> {
       );
     }
 
-    final center = LatLng(loc.lat!, loc.lng!);
+    final center = _overrideCenter ?? LatLng(loc.lat!, loc.lng!);
 
     return Scaffold(
       body: Stack(
@@ -168,19 +186,6 @@ class _MapScreenState extends State<MapScreen> {
                                   style: const TextStyle(color: GameTheme.ink, fontSize: 10, fontWeight: FontWeight.w900),
                                 ),
                               ),
-                            Container(
-                              margin: const EdgeInsets.only(top: 2),
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: GameTheme.cream,
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: GameTheme.bark),
-                              ),
-                              child: Text(
-                                '${_dummyUsersInStore(shop)}',
-                                style: const TextStyle(color: GameTheme.ink, fontSize: 9, fontWeight: FontWeight.w900),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -258,7 +263,7 @@ class _TopBar extends StatelessWidget {
         children: [
           const Icon(Icons.location_city, color: GameTheme.carrot),
           const SizedBox(width: 8),
-          const Text('City Wallet', style: TextStyle(color: GameTheme.ink, fontWeight: FontWeight.w900)),
+          const Text('WayFarer', style: TextStyle(color: GameTheme.ink, fontWeight: FontWeight.w900)),
           const Spacer(),
           loading
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))

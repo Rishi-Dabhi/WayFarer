@@ -24,7 +24,7 @@ export default function ModelDownloadScreen() {
         <Ionicons name="sparkles" size={42} color="#38BDF8" />
         <Text style={styles.title}>Prepare local AI</Text>
         <Text style={styles.body}>
-          City Wallet can generate coupon copy on this phone with Gemma 3 1B. The demo also has a fallback if the model is not installed yet.
+          WayFarer can generate coupon copy on this phone with Gemma 3 1B. The demo also has a fallback if the model is not installed yet.
         </Text>
         {started && (
           <View style={styles.progressTrack}>

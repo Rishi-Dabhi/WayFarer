@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>City Wallet</string>
+	<string>WayFarer</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,13 +15,13 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>City Wallet</string>
+	<string>WayFarer</string>
 	<key>NSCameraUsageDescription</key>
-	<string>City Wallet uses the camera to scan offer QR codes.</string>
+	<string>WayFarer uses the camera to scan offer QR codes.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>City Wallet uses location to discover nearby offers.</string>
+	<string>WayFarer uses location to discover nearby offers.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>City Wallet uses location to discover nearby offers.</string>
+	<string>WayFarer uses location to discover nearby offers.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

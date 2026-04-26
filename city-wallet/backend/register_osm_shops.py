@@ -1,7 +1,7 @@
 """
-Register real nearby venues from OpenStreetMap as City Wallet shops.
+Register real nearby venues from OpenStreetMap as WayFarer shops.
 
-This creates City Wallet merchant/shop/product rows for real OSM venues near
+This creates WayFarer merchant/shop/product rows for real OSM venues near
 the coordinates you provide. It does not create demo consumers or coupons.
 
 Usage:
@@ -257,7 +257,7 @@ async def register_shops(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Register real nearby OSM shops in City Wallet")
+    parser = argparse.ArgumentParser(description="Register real nearby OSM shops in WayFarer")
     parser.add_argument("--lat", type=float, required=True, help="Latitude near your current location")
     parser.add_argument("--lng", type=float, required=True, help="Longitude near your current location")
     parser.add_argument("--radius", type=float, default=1200, help="Search radius in metres")

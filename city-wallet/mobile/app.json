@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "City Wallet",
+    "name": "WayFarer",
     "slug": "city-wallet",
     "version": "1.0.0",
     "scheme": "citywallet",
@@ -13,10 +13,10 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.citywallet.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "City Wallet uses your location to find nearby offers. Your raw coordinates are never stored.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "City Wallet tracks your location in the background so offers appear automatically as you walk past shops. Coordinates are never stored.",
-        "NSLocationAlwaysUsageDescription": "City Wallet tracks your location in the background so offers appear automatically as you walk past shops.",
-        "NSCameraUsageDescription": "City Wallet needs the camera to scan offer QR codes.",
+        "NSLocationWhenInUseUsageDescription": "WayFarer uses your location to find nearby offers. Your raw coordinates are never stored.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "WayFarer tracks your location in the background so offers appear automatically as you walk past shops. Coordinates are never stored.",
+        "NSLocationAlwaysUsageDescription": "WayFarer tracks your location in the background so offers appear automatically as you walk past shops.",
+        "NSCameraUsageDescription": "WayFarer needs the camera to scan offer QR codes.",
         "UIBackgroundModes": [
           "location",
           "fetch"
@@ -49,8 +49,8 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "City Wallet uses your location to find nearby offers. Your raw coordinates are never stored.",
-          "locationAlwaysAndWhenInUsePermission": "City Wallet tracks your location in the background so offers appear automatically as you walk near shops.",
+          "locationWhenInUsePermission": "WayFarer uses your location to find nearby offers. Your raw coordinates are never stored.",
+          "locationAlwaysAndWhenInUsePermission": "WayFarer tracks your location in the background so offers appear automatically as you walk near shops.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
@@ -59,7 +59,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "City Wallet needs camera access to scan QR codes at checkout."
+          "cameraPermission": "WayFarer needs camera access to scan QR codes at checkout."
         }
       ],
       [

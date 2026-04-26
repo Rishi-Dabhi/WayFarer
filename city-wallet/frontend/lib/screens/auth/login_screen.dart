@@ -51,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   PixelMotif(color: GameTheme.carrot, size: 9),
                   SizedBox(width: 14),
                   Text(
-                    'City Wallet',
+                    'WayFarer',
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: GameTheme.ink),
                   ),
                   SizedBox(width: 14),

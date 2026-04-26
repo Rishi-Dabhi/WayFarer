@@ -9,6 +9,7 @@ import 'providers/auth_provider.dart';
 import 'providers/location_provider.dart';
 import 'services/api_service.dart';
 import 'services/location_service.dart';
+import 'services/notification_service.dart';
 import 'services/storage_service.dart';
 import 'theme/game_theme.dart';
 
@@ -40,27 +41,41 @@ void main() async {
   final api = ApiService(storage);
   final auth = AuthProvider(api, storage);
   await auth.loadFromStorage();
+  await NotificationService.instance.initialize();
   runApp(CityWalletApp(auth: auth, api: api));
 }
 
-class CityWalletApp extends StatelessWidget {
+class CityWalletApp extends StatefulWidget {
   final AuthProvider auth;
   final ApiService api;
 
   const CityWalletApp({super.key, required this.auth, required this.api});
 
   @override
+  State<CityWalletApp> createState() => _CityWalletAppState();
+}
+
+class _CityWalletAppState extends State<CityWalletApp> {
+  late final GoRouter _router = _buildRouter();
+
+  @override
+  void initState() {
+    super.initState();
+    NotificationService.instance.setRouteTapHandler((route) {
+      _router.go(route);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: auth),
-        Provider.value(value: api),
+        ChangeNotifierProvider.value(value: widget.auth),
+        Provider.value(value: widget.api),
         ChangeNotifierProvider(create: (_) => LocationProvider(LocationService())),
       ],
-      child: Builder(builder: (ctx) {
-        final router = _buildRouter(ctx);
-        return MaterialApp.router(
-          title: 'City Wallet',
+      child: MaterialApp.router(
+          title: 'WayFarer',
           scrollBehavior: const _AppScrollBehavior(),
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
@@ -150,22 +165,21 @@ class CityWalletApp extends StatelessWidget {
               ),
             ),
           ),
-          routerConfig: router,
-        );
-      }),
-      );
+          routerConfig: _router,
+        ),
+    );
   }
 
-  GoRouter _buildRouter(BuildContext ctx) => GoRouter(
+  GoRouter _buildRouter() => GoRouter(
         initialLocation: '/login',
-        refreshListenable: auth,
+        refreshListenable: widget.auth,
         redirect: (context, state) {
-          final loggedIn = auth.isLoggedIn;
+          final loggedIn = widget.auth.isLoggedIn;
           final onAuth = state.matchedLocation.startsWith('/login') ||
               state.matchedLocation.startsWith('/register');
           if (!loggedIn && !onAuth) return '/login';
           if (loggedIn && onAuth) {
-            return auth.user?.role == 'merchant' ? '/merchant' : '/consumer';
+            return widget.auth.user?.role == 'merchant' ? '/merchant' : '/consumer';
           }
           return null;
         },

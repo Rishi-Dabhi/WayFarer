@@ -31,7 +31,7 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Privacy & Data</Text>
 
         <View style={styles.privacyBox}>
-          <Text style={styles.privacyHead}>How City Wallet protects your data</Text>
+          <Text style={styles.privacyHead}>How WayFarer protects your data</Text>
           <Text style={styles.privacyBody}>
             Your GPS coordinates are never stored. Each time you tap "Find Offers", only an
             abstract context signal (weather, approximate busyness level) is sent to generate

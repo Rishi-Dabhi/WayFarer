@@ -78,7 +78,7 @@ async def get_signals(
     return {
         "weather": weather,
         "time": time_ctx,
-        "nearby_shops": nearby_shops,        # registered City Wallet merchants
+        "nearby_shops": nearby_shops,        # registered WayFarer merchants
         "local_events": events,              # Eventbrite / stub
         "osm_density": osm_density,          # real OSM venue count + closest venues
     }

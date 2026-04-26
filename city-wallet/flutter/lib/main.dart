@@ -51,7 +51,7 @@ class CityWalletApp extends StatelessWidget {
       child: Builder(builder: (ctx) {
         final router = _buildRouter(ctx);
         return MaterialApp.router(
-          title: 'City Wallet',
+          title: 'WayFarer',
           theme: ThemeData(
             colorSchemeSeed: const Color(0xFFF97316),
             useMaterial3: true,

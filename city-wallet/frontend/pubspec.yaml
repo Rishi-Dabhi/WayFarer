@@ -1,5 +1,5 @@
 name: city_wallet
-description: City Wallet - AI-powered urban coupon discovery
+description: WayFarer - AI-powered urban coupon discovery
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -24,6 +24,7 @@ dependencies:
   intl: ^0.19.0
   path_provider: ^2.1.4
   flutter_stripe: ^11.3.0
+  flutter_local_notifications: ^21.0.0
 
 dev_dependencies:
   flutter_test:
