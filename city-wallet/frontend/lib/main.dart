@@ -9,7 +9,6 @@ import 'providers/auth_provider.dart';
 import 'providers/location_provider.dart';
 import 'services/api_service.dart';
 import 'services/location_service.dart';
-import 'services/notification_service.dart';
 import 'services/storage_service.dart';
 import 'theme/game_theme.dart';
 
@@ -41,7 +40,6 @@ void main() async {
   final api = ApiService(storage);
   final auth = AuthProvider(api, storage);
   await auth.loadFromStorage();
-  await NotificationService.instance.initialize();
   runApp(CityWalletApp(auth: auth, api: api));
 }
 
@@ -57,14 +55,6 @@ class CityWalletApp extends StatefulWidget {
 
 class _CityWalletAppState extends State<CityWalletApp> {
   late final GoRouter _router = _buildRouter();
-
-  @override
-  void initState() {
-    super.initState();
-    NotificationService.instance.setRouteTapHandler((route) {
-      _router.go(route);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {

@@ -10,6 +10,15 @@ from services.qr_service import generate_qr_token
 from config import DEMO_CONTEXTS
 
 router = APIRouter(prefix="/api/offers", tags=["offers"])
+DEMO_MIN_EXPIRES_MINUTES = 24 * 60
+
+
+def _demo_expiry_minutes(minutes: int | None) -> int:
+    try:
+        requested = int(minutes or 60)
+    except (TypeError, ValueError):
+        requested = 60
+    return max(requested, DEMO_MIN_EXPIRES_MINUTES)
 
 
 @router.post("/generate")
@@ -50,7 +59,9 @@ async def generate_offer(
             db = await get_db()
             shop = shop_data["shop"]
             token = generate_qr_token()
-            expires_at = (datetime.utcnow() + timedelta(minutes=offer_data.get("expires_minutes", 60))).isoformat()
+            expires_at = (
+                datetime.utcnow() + timedelta(minutes=_demo_expiry_minutes(offer_data.get("expires_minutes")))
+            ).isoformat()
 
             product_id = None
             if offer_data.get("product_name"):

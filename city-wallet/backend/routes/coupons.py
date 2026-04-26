@@ -15,6 +15,7 @@ from config import settings
 
 router = APIRouter(prefix="/api/coupons", tags=["coupons"])
 OFFER_ENGINE_VERSION = 4
+DEMO_MIN_EXPIRES_MINUTES = 24 * 60
 CREATIVE_LANES = [
     {
         "name": "direct",
@@ -68,6 +69,14 @@ class AutoNearbyIn(BaseModel):
     user_id: int | None = None
     radius_m: int = 800
     max_coupons: int = 3
+
+
+def _demo_expiry_minutes(minutes: int | None) -> int:
+    try:
+        requested = int(minutes or 60)
+    except (TypeError, ValueError):
+        requested = 60
+    return max(requested, DEMO_MIN_EXPIRES_MINUTES)
 
 
 def _time_context(now: datetime) -> dict:
@@ -204,7 +213,7 @@ def _forbidden_openers(headlines: list[str]) -> list[str]:
 async def create_coupon(body: CouponCreateIn):
     """Persist a device-generated offer and mint the signed QR token."""
     db = await get_db()
-    expires_at = (datetime.utcnow() + timedelta(minutes=body.expires_minutes)).isoformat()
+    expires_at = (datetime.utcnow() + timedelta(minutes=_demo_expiry_minutes(body.expires_minutes))).isoformat()
     token = generate_qr_token()
 
     async with db.execute(
@@ -412,7 +421,7 @@ async def auto_nearby_coupons(body: AutoNearbyIn):
         offer = await generate_coupon_copy(dict(shop), dict(product), distance_m, busyness, ratio, threshold, context)
         discount_pct = offer["discount_pct"]
         cashback_cents = offer["cashback_cents"]
-        expires_minutes = offer["expires_minutes"]
+        expires_minutes = _demo_expiry_minutes(offer.get("expires_minutes"))
         expires_at = (now + timedelta(minutes=expires_minutes)).isoformat()
         token = generate_qr_token()
         headline = offer["headline"]
@@ -512,9 +521,6 @@ async def auto_nearby_coupons(body: AutoNearbyIn):
 
 @router.get("/validate/{token}")
 async def validate_coupon(token: str):
-    if not verify_qr_token(token):
-        raise HTTPException(400, "Invalid QR token")
-
     db = await get_db()
     async with db.execute(
         "SELECT c.*, s.name as shop_name, s.address, s.merchant_id "
@@ -523,6 +529,9 @@ async def validate_coupon(token: str):
     ) as cur:
         row = await cur.fetchone()
 
+    # Keep old demo coupons redeemable after a local JWT_SECRET change.
+    if not row and not verify_qr_token(token):
+        raise HTTPException(400, "Invalid QR token")
     if not row:
         raise HTTPException(404, "Coupon not found")
 
@@ -542,9 +551,6 @@ class RedeemIn(BaseModel):
 
 @router.post("/redeem")
 async def redeem_coupon(body: RedeemIn, merchant: dict = Depends(require_merchant)):
-    if not verify_qr_token(body.token):
-        raise HTTPException(400, "Invalid QR token")
-
     db = await get_db()
     async with db.execute(
         "SELECT c.*, s.merchant_id, s.category as shop_category, "
@@ -559,6 +565,9 @@ async def redeem_coupon(body: RedeemIn, merchant: dict = Depends(require_merchan
     ) as cur:
         coupon = await cur.fetchone()
 
+    # Keep old demo coupons redeemable after a local JWT_SECRET change.
+    if not coupon and not verify_qr_token(body.token):
+        raise HTTPException(400, "Invalid QR token")
     if not coupon:
         raise HTTPException(404, "Coupon not found")
     if coupon["status"] != "active":
