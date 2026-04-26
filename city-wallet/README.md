@@ -5,12 +5,12 @@ Hackathon prototype for a generative city wallet: consumers see nearby shops on 
 ## Current Demo Stack
 
 - Backend: FastAPI + SQLite for the local hackathon demo
-- Mobile: Expo React Native, Expo Go compatible
-- Map: `react-native-maps`
+- Mobile: Expo React Native development build
+- Map: native Mapbox via `@rnmapbox/maps`
 - Context: foreground location, weather, OSM/Eventbrite fallbacks, simulated Payone footfall
 - Payments: Stripe test-mode shape with Expo Go fallback for wallet top-up
 
-MongoDB, native Mapbox, native Stripe sheet, and on-device Gemma are documented in `PLAN.md` as the fuller architecture, but the current runnable demo favors Expo Go reliability.
+MongoDB, native Stripe sheet, and on-device Gemma are documented in `PLAN.md` as the fuller architecture. The current map uses native Mapbox, so run it as a development build rather than Expo Go.
 
 ## Quick Start
 
@@ -30,7 +30,8 @@ Mobile:
 cd city-wallet/mobile
 cp .env.example .env
 npm install
-npx expo start -c
+npx expo run:android
+npx expo start --dev-client
 ```
 
 For Android emulator, set this in `mobile/.env`:
@@ -52,4 +53,3 @@ For a physical phone, use your machine LAN IP instead.
 - Do not commit `city_wallet.db`, `node_modules`, `.venv`, `.expo`, `android`, or IDE folders.
 - Keep `package-lock.json` committed for reproducible mobile installs.
 - Use `.env.example` files for placeholder keys only.
-

@@ -34,30 +34,17 @@ export async function downloadModel(onProgress?: (progress: number) => void) {
 }
 
 export async function generateOfferWithGemma(prompt: string): Promise<GeneratedOffer> {
-  try {
-    // Native llama.rn integration is intentionally isolated here. The mock fallback
-    // keeps the hackathon demo usable before a custom dev build has the GGUF runtime.
-    const llama = await import("llama.rn");
-    if (!llama) throw new Error("llama.rn unavailable");
-    throw new Error("Gemma runtime not initialized in this demo build");
-  } catch {
-    return mockOffer(prompt);
-  }
-}
+  const llama = await import("llama.rn");
+  if (!llama) throw new Error("llama.rn module not available");
 
-function mockOffer(prompt: string): GeneratedOffer {
-  const rainy = /rain|grey|cold|8|11/i.test(prompt);
-  const lunch = /lunch|midday|restaurant|food/i.test(prompt);
-  return {
-    headline: rainy ? "Warm up nearby" : lunch ? "Lunch cashback close by" : "A nearby reward waits",
-    body_text: rainy
-      ? "The weather is doing no one any favours, and this shop has room right now. Drop in soon and get instant cashback when you redeem."
-      : "You are close enough for this to be useful, not spammy. Redeem at the counter and the cashback lands after the merchant confirms.",
-    why_now: "Generated from live location, current context signals, shop busyness, products, and campaign settings.",
-    discount_pct: 15,
-    cashback_cents: 150,
-    product_name: "Featured item",
-    expires_minutes: 60,
-  };
-}
+  const context = await llama.initLlama({ model: MODEL_FILE });
+  if (!context) throw new Error("Failed to initialise Gemma context");
 
+  const result = await context.completion({ prompt, n_predict: 400, temperature: 0.7 });
+  const text = typeof result === "string" ? result : result?.text ?? "";
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Gemma did not return valid JSON");
+
+  return JSON.parse(jsonMatch[0]) as GeneratedOffer;
+}

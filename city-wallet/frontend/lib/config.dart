@@ -8,6 +8,16 @@ class Config {
     return kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000';
   }
 
+  static double? get debugLatitude {
+    const value = String.fromEnvironment('DEBUG_LAT');
+    return kDebugMode && value.isNotEmpty ? double.tryParse(value) : null;
+  }
+
+  static double? get debugLongitude {
+    const value = String.fromEnvironment('DEBUG_LNG');
+    return kDebugMode && value.isNotEmpty ? double.tryParse(value) : null;
+  }
+
   // Location
   static const int foregroundDistanceM = 15;
   static const int foregroundIntervalMs = 10000;

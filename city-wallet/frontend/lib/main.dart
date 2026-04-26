@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import 'providers/location_provider.dart';
 import 'services/api_service.dart';
 import 'services/location_service.dart';
 import 'services/storage_service.dart';
+import 'theme/game_theme.dart';
 
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -52,21 +54,49 @@ class CityWalletApp extends StatelessWidget {
         final router = _buildRouter(ctx);
         return MaterialApp.router(
           title: 'City Wallet',
+          scrollBehavior: const _AppScrollBehavior(),
           theme: ThemeData(
-            colorSchemeSeed: const Color(0xFFF97316),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: GameTheme.carrot,
+              brightness: Brightness.light,
+              primary: GameTheme.carrot,
+              secondary: GameTheme.grass,
+              surface: GameTheme.cream,
+            ),
             useMaterial3: true,
-            scaffoldBackgroundColor: const Color(0xFFF9FAFB),
+            scaffoldBackgroundColor: const Color(0xFFFFF7DF),
+            fontFamily: 'monospace',
             appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.white,
+              backgroundColor: GameTheme.cream,
               elevation: 0,
-              titleTextStyle: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold),
-              iconTheme: IconThemeData(color: Colors.black87),
+              centerTitle: false,
+              titleTextStyle: TextStyle(color: GameTheme.ink, fontSize: 18, fontWeight: FontWeight.w900),
+              iconTheme: IconThemeData(color: GameTheme.ink),
+              surfaceTintColor: Colors.transparent,
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                backgroundColor: GameTheme.carrot,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(GameTheme.radius),
+                  side: const BorderSide(color: GameTheme.bark, width: 2),
+                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+            outlinedButtonTheme: OutlinedButtonThemeData(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: GameTheme.ink,
+                side: const BorderSide(color: GameTheme.bark, width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(GameTheme.radius)),
+              ),
             ),
           ),
           routerConfig: router,
         );
       }),
-    );
+      );
   }
 
   GoRouter _buildRouter(BuildContext ctx) => GoRouter(
@@ -144,4 +174,16 @@ class CityWalletApp extends StatelessWidget {
           ),
         ],
       );
+}
+
+class _AppScrollBehavior extends MaterialScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.trackpad,
+      };
 }

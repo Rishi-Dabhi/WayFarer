@@ -29,3 +29,6 @@ export const OFFER_COOLDOWN_MS = 180_000; // 3 minutes
 
 // Static cooldown: if user hasn't moved, don't push new coords to React more than once per N ms
 export const STATIC_UPDATE_INTERVAL_MS = 120_000; // 2 min
+
+// How often to refresh context signals (weather, busyness, events)
+export const SIGNAL_REFRESH_MS = 60_000; // 1 minute

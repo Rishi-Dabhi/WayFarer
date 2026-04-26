@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from database import get_db
 from services.context_aggregator import get_signals, best_shop_for_offer
@@ -104,7 +104,6 @@ async def get_offer(coupon_id: int):
     ) as cur:
         row = await cur.fetchone()
     if not row:
-        from fastapi import HTTPException
         raise HTTPException(404, "Coupon not found")
     return dict(row)
 

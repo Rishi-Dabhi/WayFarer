@@ -45,6 +45,18 @@ class LocationProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    final debugLat = Config.debugLatitude;
+    final debugLng = Config.debugLongitude;
+    if (debugLat != null && debugLng != null) {
+      _lat = debugLat;
+      _lng = debugLng;
+      _speed = 0;
+      _hasRealLocation = true;
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     final pos = await _service.getCurrent();
     if (pos == null) {
       _error = 'Location permission is required to find nearby offers.';

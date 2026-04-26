@@ -55,14 +55,14 @@ _AMENITY_FILTER = "|".join(_AMENITY_CATEGORY.keys())
 _SHOP_FILTER = "|".join(_SHOP_CATEGORY.keys())
 
 
-def _build_query(lat: float, lng: float, radius_m: float) -> str:
+def _build_query(lat: float, lng: float, radius_m: float, limit: int = 120) -> str:
     return f"""
-[out:json][timeout:15];
+[out:json][timeout:45];
 (
   nwr["amenity"~"^({_AMENITY_FILTER})$"]["name"](around:{int(radius_m)},{lat},{lng});
   nwr["shop"~"^({_SHOP_FILTER})$"]["name"](around:{int(radius_m)},{lat},{lng});
 );
-out center;
+out center {int(limit)};
 """.strip()
 
 
@@ -95,17 +95,18 @@ def _osm_to_poi(element: dict, user_lat: float, user_lng: float) -> dict:
     }
 
 
-async def get_nearby_pois(lat: float, lng: float, radius_m: float = 600) -> list[dict]:
+async def get_nearby_pois(lat: float, lng: float, radius_m: float = 600, limit: int = 120) -> list[dict]:
     """Return real nearby venues from OSM, sorted by distance."""
-    key = f"{round(lat, 3)},{round(lng, 3)},{int(radius_m)}"
+    key = f"{round(lat, 3)},{round(lng, 3)},{int(radius_m)},{int(limit)}"
     now = time.time()
     if key in _CACHE and now - _CACHE[key]["ts"] < _CACHE_TTL:
         return _CACHE[key]["data"]
 
-    query = _build_query(lat, lng, radius_m)
+    query = _build_query(lat, lng, radius_m, limit)
     elements = []
     last_error = None
-    async with httpx.AsyncClient(timeout=20) as client:
+    headers = {"User-Agent": "CityWalletHackathon/1.0"}
+    async with httpx.AsyncClient(timeout=60, headers=headers) as client:
         for url in OVERPASS_URLS:
             try:
                 r = await client.post(url, data={"data": query})
@@ -117,7 +118,7 @@ async def get_nearby_pois(lat: float, lng: float, radius_m: float = 600) -> list
                 last_error = exc
 
     if not elements and last_error:
-        print(f"OSM Overpass warning: {last_error}")
+        print(f"OSM Overpass warning: {type(last_error).__name__}: {last_error}")
 
     pois = [
         _osm_to_poi(e, lat, lng)

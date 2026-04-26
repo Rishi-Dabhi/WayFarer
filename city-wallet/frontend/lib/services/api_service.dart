@@ -40,11 +40,28 @@ class ApiService {
   }
 
   // Shops
-  Future<List<Shop>> getMapShops(double lat, double lng, {int radius = 800}) async {
+  Future<List<Shop>> getMapShops(double lat, double lng, {int radius = 800, int? userId}) async {
     final res = await _dio.get('/api/shops/map', queryParameters: {
-      'lat': lat, 'lng': lng, 'radius': radius,
+      'lat': lat, 'lng': lng, 'radius': radius, if (userId != null) 'user_id': userId,
     });
     return (res.data as List).map((s) => Shop.fromJson(s)).toList();
+  }
+
+  Future<Map<String, dynamic>> autoNearbyCoupons(
+    double lat,
+    double lng, {
+    int? userId,
+    int radius = 800,
+    int maxCoupons = 3,
+  }) async {
+    final res = await _dio.post('/api/coupons/auto-nearby', data: {
+      'lat': lat,
+      'lng': lng,
+      'user_id': userId,
+      'radius_m': radius,
+      'max_coupons': maxCoupons,
+    });
+    return Map<String, dynamic>.from(res.data as Map);
   }
 
   Future<Shop> getShopDetail(int shopId) async {

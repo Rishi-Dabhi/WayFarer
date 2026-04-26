@@ -64,73 +64,18 @@ _QUIET_HOURS_BY_CATEGORY: dict[str, list[str]] = {
 }
 
 
-def _demo_fallback_pois(lat: float, lng: float) -> list[dict]:
-    """Reliable fallback for hackathon demos when Overpass is unavailable."""
-    return [
-        {
-            "osm_id": "demo-cafe-kern",
-            "name": "Cafe Kern",
-            "category": "cafe",
-            "lat": lat + 0.0003,
-            "lng": lng + 0.0002,
-            "address": "Demo Street 1",
-            "distance_m": 45,
-        },
-        {
-            "osm_id": "demo-market-deli",
-            "name": "Market Deli",
-            "category": "restaurant",
-            "lat": lat - 0.0004,
-            "lng": lng + 0.0004,
-            "address": "Demo Street 7",
-            "distance_m": 70,
-        },
-        {
-            "osm_id": "demo-urban-books",
-            "name": "Urban Books",
-            "category": "retail",
-            "lat": lat + 0.0005,
-            "lng": lng - 0.0005,
-            "address": "Demo Passage 3",
-            "distance_m": 92,
-        },
-        {
-            "osm_id": "demo-evening-bar",
-            "name": "Evening Bar",
-            "category": "bar",
-            "lat": lat - 0.0006,
-            "lng": lng - 0.0003,
-            "address": "Demo Platz 2",
-            "distance_m": 105,
-        },
-        {
-            "osm_id": "demo-bakery-corner",
-            "name": "Bakery Corner",
-            "category": "cafe",
-            "lat": lat + 0.0001,
-            "lng": lng + 0.0008,
-            "address": "Demo Allee 12",
-            "distance_m": 118,
-        },
-    ]
-
-
 def _slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", name.lower())[:20]
 
 
-async def seed(lat: float, lng: float, radius_m: float, dry_run: bool, demo_fallback: bool) -> None:
+async def seed(lat: float, lng: float, radius_m: float, dry_run: bool) -> None:
     pois = await get_nearby_pois(lat, lng, radius_m)
     if not pois:
-        if demo_fallback:
-            print("No OSM POIs found, using built-in demo venues so the app can run.")
-            pois = _demo_fallback_pois(lat, lng)
-        else:
-            print("No OSM POIs found.")
-            print("Try a larger radius, for example:")
-            print(f"  python seed_from_osm.py --lat {lat} --lng {lng} --radius 1500 --dry-run")
-            print("If that still returns nothing, Overpass may be temporarily unavailable.")
-            return
+        print("No OSM POIs found. Check your coordinates or increase --radius.")
+        print("Try a larger radius, for example:")
+        print(f"  python seed_from_osm.py --lat {lat} --lng {lng} --radius 1500 --dry-run")
+        print("If that still returns nothing, Overpass may be temporarily unavailable.")
+        return
 
     print(f"\nFound {len(pois)} venues within {int(radius_m)}m of ({lat}, {lng})\n")
 
@@ -239,7 +184,6 @@ if __name__ == "__main__":
     parser.add_argument("--lng", type=float, default=9.1800, help="Demo longitude")
     parser.add_argument("--radius", type=float, default=1000, help="Search radius in metres")
     parser.add_argument("--dry-run", action="store_true", help="Preview without writing to DB")
-    parser.add_argument("--no-demo-fallback", action="store_true", help="Do not use built-in venues if OSM is unavailable")
     args = parser.parse_args()
 
-    asyncio.run(seed(args.lat, args.lng, args.radius, args.dry_run, not args.no_demo_fallback))
+    asyncio.run(seed(args.lat, args.lng, args.radius, args.dry_run))

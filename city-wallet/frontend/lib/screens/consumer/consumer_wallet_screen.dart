@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../models/coupon.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../theme/game_theme.dart';
+import '../../widgets/coupon_card.dart';
 
 class ConsumerWalletScreen extends StatefulWidget {
   const ConsumerWalletScreen({super.key});
@@ -37,10 +39,10 @@ class _ConsumerWalletScreenState extends State<ConsumerWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: const Color(0xFFFFF7DF),
       appBar: AppBar(
         title: const Text('My Wallet'),
-        backgroundColor: Colors.white,
+        backgroundColor: GameTheme.cream,
         elevation: 0,
       ),
       body: _loading
@@ -52,18 +54,21 @@ class _ConsumerWalletScreenState extends State<ConsumerWalletScreen> {
                     children: [
                       Icon(Icons.wallet_outlined, size: 64, color: Colors.grey.shade400),
                       const SizedBox(height: 12),
-                      Text('No coupons yet', style: TextStyle(color: Colors.grey.shade500)),
+                      const Text('No coupons yet', style: TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w900)),
                       const SizedBox(height: 4),
-                      Text('Discover shops on the map to get offers', style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
+                      const Text('Discover shops on the map to get offers', style: TextStyle(fontSize: 12, color: GameTheme.soil)),
                     ],
                   ),
                 )
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 18, 20, 28),
                     itemCount: _coupons.length,
-                    itemBuilder: (_, i) => _CouponTile(coupon: _coupons[i]),
+                    itemBuilder: (_, i) => CouponCard(
+                      coupon: _coupons[i],
+                      onTap: () => context.push('/consumer/offer/${_coupons[i].id}'),
+                    ),
                   ),
                 ),
     );

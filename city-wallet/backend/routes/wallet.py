@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from config import settings
 from database import get_db
 from middleware.auth import require_merchant
 from services.stripe_service import create_payment_intent
@@ -55,7 +56,7 @@ async def initiate_topup(body: TopUpIn, merchant: dict = Depends(require_merchan
         "client_secret": result["client_secret"],
         "payment_intent_id": result["payment_intent_id"],
         "amount_cents": body.amount_cents,
-        "publishable_key": __import__("config").settings.stripe_publishable_key,
+        "publishable_key": settings.stripe_publishable_key,
     }
 
 

@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db, close_db, get_db
+from config import settings
 from routes import auth, context, offers, coupons, products, merchants, wallet, analytics, shops, webhook
 from services.payone_simulator import update_density
 
@@ -26,9 +27,9 @@ async def _payone_background():
 async def lifespan(app: FastAPI):
     await init_db()
 
-    # Seed demo data if empty
-    from seed import seed_if_empty
-    await seed_if_empty()
+    if settings.seed_demo_data:
+        from seed import seed_if_empty
+        await seed_if_empty()
 
     task = asyncio.create_task(_payone_background())
     yield

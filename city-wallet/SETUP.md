@@ -25,13 +25,13 @@ Demo logins:
 - Consumer: `user@demo.com` / `demo1234`
 - Merchant: `merchant@demo.com` / `demo1234`
 
-For native Stripe wallet top-ups, run this in another terminal:
+For Stripe wallet top-ups, run this in another terminal:
 
 ```bash
 stripe listen --forward-to localhost:8000/api/webhooks/stripe
 ```
 
-Copy the `whsec_...` value into `STRIPE_WEBHOOK_SECRET`. In Expo Go demo mode, merchant wallet top-up uses the backend fallback endpoint, so this is optional.
+Copy the `whsec_...` value into `STRIPE_WEBHOOK_SECRET`.
 
 ## Mobile
 
@@ -50,9 +50,7 @@ EXPO_PUBLIC_STRIPE_PK=pk_test_...
 EXPO_PUBLIC_MAPBOX_TOKEN=pk.eyJ1...
 ```
 
-Expo Go mode is supported for the hackathon demo. In Expo Go, the app uses `react-native-maps` for a real map and uses a simulated wallet top-up fallback instead of the native Stripe sheet.
-
-Native Mapbox, native Stripe sheets, and `llama.rn` require a custom Expo dev build. The Gemma path includes a fallback generator so the demo can still create offers before native model setup is complete.
+Mapbox and `llama.rn` require a custom Expo dev build, not plain Expo Go. The Gemma path includes a fallback generator so the demo can still create offers before native model setup is complete.
 
 ## OSM Pre-Demo Shop Registration
 
@@ -69,13 +67,12 @@ The script creates merchant accounts, products, campaign defaults, and wallet ba
 ## Consumer Flow
 
 1. Open the app from the icon.
-2. The map loads around the user.
-3. The backend checks merchant thresholds against the user's current location and live context.
-4. Shop pins show active coupon counts.
-5. Tap a pin, then tap `Open store`.
-6. The shop page shows details, products, and available coupons.
-7. Tap a coupon to view details.
-8. Tap `View QR code` to show the redeemable QR.
+2. The Mapbox map loads around the user.
+3. Shop pins show active coupon counts.
+4. Tap a pin, then tap `Open store`.
+5. The shop page shows details, products, and available coupons.
+6. Tap a coupon to view details.
+7. Tap `View QR code` to show the redeemable QR.
 
 ## Notification Flow
 
@@ -84,8 +81,9 @@ Push notifications include coupon routing data. Tapping a notification opens `/(
 ## Merchant Flow
 
 1. Log in as merchant.
-2. Top up the organisation wallet. Expo Go demo mode credits through the backend fallback.
-3. Native dev builds can use Stripe webhook crediting.
+2. Top up the organisation wallet with Stripe test card `4242 4242 4242 4242`.
+3. Stripe webhook credits the wallet.
 4. Scan the consumer QR.
 5. Confirm redemption.
 6. Cashback is deducted from the merchant wallet and the transaction updates analytics/preferences.
+

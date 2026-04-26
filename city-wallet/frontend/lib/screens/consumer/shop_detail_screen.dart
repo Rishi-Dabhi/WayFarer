@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../models/coupon.dart';
-import '../../models/product.dart';
 import '../../models/shop.dart';
 import '../../services/api_service.dart';
+import '../../theme/game_theme.dart';
+import '../../widgets/coupon_card.dart';
 
 class ShopDetailScreen extends StatefulWidget {
   final String shopId;
@@ -27,7 +27,12 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
   Future<void> _load() async {
     try {
       final shop = await context.read<ApiService>().getShopDetail(int.parse(widget.shopId));
-      if (mounted) setState(() { _shop = shop; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _shop = shop;
+          _loading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -36,10 +41,10 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: const Color(0xFFFFF7DF),
       appBar: AppBar(
         title: Text(_shop?.name ?? 'Shop'),
-        backgroundColor: Colors.white,
+        backgroundColor: GameTheme.cream,
         elevation: 0,
       ),
       body: _loading
@@ -49,21 +54,29 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 18, 20, 32),
                     children: [
                       _ShopHeader(shop: _shop!),
                       const SizedBox(height: 20),
                       if (_shop!.coupons?.isNotEmpty == true) ...[
-                        const Text('Available Offers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Current Offer',
+                          style: TextStyle(color: GameTheme.ink, fontSize: 16, fontWeight: FontWeight.w900),
+                        ),
                         const SizedBox(height: 10),
-                        ..._shop!.coupons!.map((c) => _CouponCard(coupon: c)),
-                        const SizedBox(height: 20),
-                      ],
-                      if (_shop!.products?.isNotEmpty == true) ...[
-                        const Text('Products', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 10),
-                        ..._shop!.products!.map((p) => _ProductRow(product: p)),
-                      ],
+                        CouponCard(
+                          coupon: _shop!.coupons!.first,
+                          onTap: () => context.push('/consumer/offer/${_shop!.coupons!.first.id}'),
+                        ),
+                      ] else
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: GameTheme.panel(color: GameTheme.cream),
+                          child: const Text(
+                            'No live offer right now. Check back when the shop, weather, and time line up.',
+                            style: TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700, height: 1.4),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -77,9 +90,12 @@ class _ShopHeader extends StatelessWidget {
 
   Color get _busynessColor {
     switch (shop.busyness) {
-      case 'quiet': return Colors.green;
-      case 'busy': return Colors.red;
-      default: return Colors.orange;
+      case 'quiet':
+        return GameTheme.grass;
+      case 'busy':
+        return GameTheme.berry;
+      default:
+        return GameTheme.carrot;
     }
   }
 
@@ -87,30 +103,27 @@ class _ShopHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: GameTheme.panel(color: GameTheme.cream),
       child: Row(
         children: [
           Container(
             width: 56,
             height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF97316).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.storefront, color: Color(0xFFF97316), size: 28),
+            decoration: GameTheme.inset(color: GameTheme.parchment, border: GameTheme.carrot),
+            child: const Icon(Icons.storefront, color: GameTheme.carrot, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(shop.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(shop.category, style: TextStyle(color: Colors.grey.shade600)),
+                Text(
+                  shop.name,
+                  style: const TextStyle(color: GameTheme.ink, fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                Text(shop.category, style: const TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700)),
                 if (shop.address != null)
-                  Text(shop.address!, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  Text(shop.address!, style: const TextStyle(fontSize: 12, color: GameTheme.soil)),
               ],
             ),
           ),
@@ -119,123 +132,30 @@ class _ShopHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _busynessColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: GameTheme.parchment,
+                  borderRadius: BorderRadius.circular(GameTheme.radius),
+                  border: Border.all(color: _busynessColor, width: 2),
                 ),
-                child: Text(shop.busyness, style: TextStyle(color: _busynessColor, fontSize: 12, fontWeight: FontWeight.w600)),
+                child: Text(
+                  shop.busyness,
+                  style: TextStyle(color: _busynessColor, fontSize: 12, fontWeight: FontWeight.w900),
+                ),
               ),
               if (shop.activeCouponCount > 0) ...[
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.deepOrange.shade50,
-                    borderRadius: BorderRadius.circular(8),
+                    color: GameTheme.parchment,
+                    borderRadius: BorderRadius.circular(GameTheme.radius),
+                    border: Border.all(color: GameTheme.carrot, width: 2),
                   ),
-                  child: Text('${shop.activeCouponCount} offers', style: TextStyle(color: Colors.deepOrange.shade700, fontSize: 12)),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CouponCard extends StatelessWidget {
-  final Coupon coupon;
-  const _CouponCard({required this.coupon});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push('/consumer/offer/${coupon.id}'),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.deepOrange.shade100),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(coupon.headline, style: const TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF97316),
-                    borderRadius: BorderRadius.circular(8),
+                  child: const Text(
+                    '1 offer',
+                    style: TextStyle(color: GameTheme.carrot, fontSize: 12, fontWeight: FontWeight.w900),
                   ),
-                  child: Text('${coupon.discountPct.toStringAsFixed(0)}% off',
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
-            ),
-            const SizedBox(height: 6),
-            Text(coupon.bodyText, style: TextStyle(color: Colors.grey.shade700, fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 8),
-            Text('€${coupon.cashbackEur.toStringAsFixed(2)} cashback',
-                style: TextStyle(color: Colors.green.shade700, fontSize: 12, fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProductRow extends StatelessWidget {
-  final Product product;
-  const _ProductRow({required this.product});
-
-  Color get _stockColor {
-    switch (product.stockLevel) {
-      case 'low': return Colors.red;
-      case 'high': return Colors.green;
-      default: return Colors.orange;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(product.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                if (product.description != null)
-                  Text(product.description!, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('€${product.priceEur.toStringAsFixed(2)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _stockColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(product.stockLevel, style: TextStyle(color: _stockColor, fontSize: 11)),
-              ),
             ],
           ),
         ],

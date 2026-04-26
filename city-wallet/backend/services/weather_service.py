@@ -13,7 +13,7 @@ async def get_weather(lat: float, lng: float) -> dict:
         return _cache[key]["data"]
 
     if not settings.openweather_api_key:
-        return {"temp": 14, "feels_like": 11, "condition": "overcast clouds", "icon": "04d"}
+        raise RuntimeError("OPENWEATHER_API_KEY is not set")
 
     url = "https://api.openweathermap.org/data/2.5/weather"
     params = {"lat": lat, "lon": lng, "appid": settings.openweather_api_key, "units": "metric"}

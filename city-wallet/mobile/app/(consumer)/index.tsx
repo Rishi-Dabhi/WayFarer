@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MapView, { Marker } from "react-native-maps";
+import MapboxGL from "@rnmapbox/maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import api from "@/services/api";
 import { getUser } from "@/services/storage";
+import { MAPBOX_TOKEN } from "@/constants/config";
 import { useLocation } from "@/hooks/useLocation";
 import { useContextSignals } from "@/hooks/useContextSignals";
 import { useMapShops, MapShop } from "@/hooks/useMapShops";
 import ContextStatusBar from "@/components/shared/ContextStatusBar";
+
+if (MAPBOX_TOKEN) {
+  MapboxGL.setAccessToken(MAPBOX_TOKEN);
+}
 
 const BUSYNESS_COLOR: Record<string, string> = {
   quiet: "#22C55E",
@@ -23,11 +28,19 @@ const MOVEMENT_LABEL: Record<string, string> = {
   moving_fast: "Moving fast",
 };
 
+const RADIUS_OPTIONS = [200, 500, 1000, 2000] as const;
+type Radius = typeof RADIUS_OPTIONS[number];
+
+function radiusLabel(r: Radius) {
+  return r >= 1000 ? `${r / 1000}km` : `${r}m`;
+}
+
 export default function ConsumerMapHome() {
   const router = useRouter();
   const { coords, movementState } = useLocation();
+  const [radius, setRadius] = useState<Radius>(500);
   const { signals } = useContextSignals(coords);
-  const { shops, loading, error, refresh } = useMapShops(coords);
+  const { shops, loading, error, refresh } = useMapShops(coords, radius);
   const [selected, setSelected] = useState<MapShop | null>(null);
   const [autoStatus, setAutoStatus] = useState<string | null>(null);
   const lastAutoCheck = useRef(0);
@@ -47,7 +60,7 @@ export default function ConsumerMapHome() {
         lat: coords.lat,
         lng: coords.lng,
         user_id: user?.user_id ? Number(user.user_id) : undefined,
-        radius_m: 800,
+        radius_m: radius,
       });
 
       if (data.count > 0) {
@@ -71,41 +84,58 @@ export default function ConsumerMapHome() {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.radiusRow}>
+        {RADIUS_OPTIONS.map((r) => (
+          <TouchableOpacity
+            key={r}
+            style={[styles.radiusChip, radius === r && styles.radiusChipActive]}
+            onPress={() => setRadius(r)}
+          >
+            <Text style={[styles.radiusChipText, radius === r && styles.radiusChipTextActive]}>
+              {radiusLabel(r)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <ContextStatusBar signals={signals} />
 
       <View style={styles.mapPanel}>
-        <MapView
-          style={styles.map}
-          initialRegion={{
-            latitude: coords.lat,
-            longitude: coords.lng,
-            latitudeDelta: 0.012,
-            longitudeDelta: 0.012,
-          }}
-          region={{
-            latitude: coords.lat,
-            longitude: coords.lng,
-            latitudeDelta: 0.012,
-            longitudeDelta: 0.012,
-          }}
-          showsUserLocation
-          showsMyLocationButton
-        >
-          {shops.map((shop) => (
-            <Marker
-              key={shop.id}
-              coordinate={{ latitude: shop.lat, longitude: shop.lng }}
-              onPress={() => setSelected(shop)}
-            >
-              <View style={[styles.pin, { borderColor: BUSYNESS_COLOR[shop.busyness] ?? "#38BDF8" }]}>
-                <Ionicons name="storefront" size={17} color="#F8FAFC" />
-                <View style={styles.pinBadge}>
-                  <Text style={styles.pinBadgeText}>{shop.active_coupon_count}</Text>
-                </View>
-              </View>
-            </Marker>
-          ))}
-        </MapView>
+        {MAPBOX_TOKEN ? (
+          <MapboxGL.MapView style={styles.map} styleURL={MapboxGL.StyleURL.Street}>
+            <MapboxGL.Camera
+              zoomLevel={15}
+              centerCoordinate={[coords.lng, coords.lat]}
+              animationMode="flyTo"
+              animationDuration={600}
+            />
+            <MapboxGL.UserLocation visible />
+
+            {shops.map((shop) => (
+              <MapboxGL.PointAnnotation
+                key={shop.id}
+                id={`shop-${shop.id}`}
+                coordinate={[shop.lng, shop.lat]}
+                onSelected={() => setSelected(shop)}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={[styles.pin, { borderColor: BUSYNESS_COLOR[shop.busyness] ?? "#38BDF8" }]}
+                  onPress={() => setSelected(shop)}
+                >
+                  <Ionicons name="storefront" size={17} color="#F8FAFC" />
+                  <View style={styles.pinBadge}>
+                    <Text style={styles.pinBadgeText}>{shop.active_coupon_count}</Text>
+                  </View>
+                </TouchableOpacity>
+              </MapboxGL.PointAnnotation>
+            ))}
+          </MapboxGL.MapView>
+        ) : (
+          <View style={[styles.map, styles.mapFallback]}>
+            <Text style={styles.empty}>Set EXPO_PUBLIC_MAPBOX_TOKEN to show Mapbox.</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.moveBadge}>
@@ -162,9 +192,15 @@ const styles = StyleSheet.create({
   refresh: { width: 38, height: 38, borderRadius: 8, backgroundColor: "#2563EB", alignItems: "center", justifyContent: "center" },
   mapPanel: { height: 300, margin: 16, borderRadius: 8, overflow: "hidden", backgroundColor: "#132033", borderWidth: 1, borderColor: "#1E3A5F" },
   map: { flex: 1 },
+  mapFallback: { alignItems: "center", justifyContent: "center", padding: 20 },
   pin: { width: 42, height: 42, borderRadius: 21, borderWidth: 3, backgroundColor: "#0F172A", alignItems: "center", justifyContent: "center" },
   pinBadge: { position: "absolute", top: -8, right: -8, minWidth: 20, height: 20, borderRadius: 10, backgroundColor: "#F97316", alignItems: "center", justifyContent: "center", paddingHorizontal: 5 },
   pinBadgeText: { color: "#fff", fontSize: 11, fontWeight: "900" },
+  radiusRow: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingBottom: 10 },
+  radiusChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: "#334155", backgroundColor: "transparent" },
+  radiusChipActive: { backgroundColor: "#2563EB", borderColor: "#2563EB" },
+  radiusChipText: { color: "#94A3B8", fontSize: 13, fontWeight: "700" },
+  radiusChipTextActive: { color: "#fff" },
   moveBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingBottom: 8 },
   moveText: { color: "#CBD5E1", fontSize: 12, fontWeight: "700" },
   autoStatus: { color: "#86EFAC", fontWeight: "800", paddingHorizontal: 16, paddingBottom: 8 },

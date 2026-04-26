@@ -7,12 +7,16 @@ class Settings(BaseSettings):
     openweather_api_key: str = ""
     eventbrite_token: str = ""
     mapbox_token: str = ""
+    gemma_base_url: str = "http://localhost:11434"
+    gemma_model: str = "gemma3:1b"
+    gemma_enabled: bool = True
     stripe_secret_key: str = ""
     stripe_publishable_key: str = ""
     stripe_webhook_secret: str = ""
     jwt_secret: str = "dev-secret-change-me"
     database_url: str = "./city_wallet.db"
     mongodb_url: str = ""
+    seed_demo_data: bool = False
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

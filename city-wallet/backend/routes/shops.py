@@ -10,6 +10,7 @@ async def map_shops(
     lat: float = Query(...),
     lng: float = Query(...),
     radius: int = Query(600),
+    user_id: int | None = Query(None),
 ):
     """Return registered City Wallet shops for the consumer map."""
     db = await get_db()
@@ -21,7 +22,18 @@ async def map_shops(
     shops = []
     for row in rows:
         distance_m = round(haversine_m(lat, lng, row["latitude"], row["longitude"]))
-        if distance_m > radius:
+        has_user_offer = False
+        if user_id is not None:
+            async with db.execute(
+                """SELECT id
+                   FROM coupons
+                   WHERE shop_id=? AND user_id=?
+                     AND status='active' AND expires_at > datetime('now')
+                   LIMIT 1""",
+                (row["id"], user_id),
+            ) as cur:
+                has_user_offer = await cur.fetchone() is not None
+        if distance_m > radius and not has_user_offer:
             continue
 
         busyness = await get_shop_busyness(row["id"])
@@ -30,6 +42,16 @@ async def map_shops(
             (row["id"],),
         ) as cur:
             count_row = await cur.fetchone()
+        async with db.execute(
+            """SELECT c.*, p.name AS product_name
+               FROM coupons c
+               LEFT JOIN products p ON c.product_id=p.id
+               WHERE c.shop_id=? AND c.status='active' AND c.expires_at > datetime('now')
+               ORDER BY c.expires_at ASC
+               LIMIT 1""",
+            (row["id"],),
+        ) as cur:
+            coupon_rows = await cur.fetchall()
 
         shops.append(
             {
@@ -42,8 +64,9 @@ async def map_shops(
                 "lng": row["longitude"],
                 "address": row["address"],
                 "distance_m": distance_m,
-                "active_coupon_count": count_row["count"] if count_row else 0,
-                "busyness": busyness.get("busyness") or busyness.get("level", "normal"),
+                "active_coupon_count": min(count_row["count"] if count_row else 0, 1),
+                "active_coupons": [dict(coupon) for coupon in coupon_rows],
+                "busyness": busyness.get("level", "normal"),
                 "txn_count_15min": busyness["txn_count_15min"],
             }
         )
@@ -67,7 +90,12 @@ async def shop_detail(shop_id: int):
         products = await cur.fetchall()
 
     async with db.execute(
-        "SELECT * FROM coupons WHERE shop_id=? AND status='active' AND expires_at > datetime('now') ORDER BY expires_at ASC",
+        """SELECT c.*, p.name AS product_name
+           FROM coupons c
+           LEFT JOIN products p ON c.product_id=p.id
+           WHERE c.shop_id=? AND c.status='active' AND c.expires_at > datetime('now')
+           ORDER BY c.expires_at ASC
+           LIMIT 1""",
         (shop_id,),
     ) as cur:
         coupons = await cur.fetchall()
@@ -77,5 +105,6 @@ async def shop_detail(shop_id: int):
         "shop": dict(shop),
         "products": [dict(p) for p in products],
         "active_coupons": [dict(c) for c in coupons],
+        "active_coupon_count": min(len(coupons), 1),
         "busyness": busyness,
     }

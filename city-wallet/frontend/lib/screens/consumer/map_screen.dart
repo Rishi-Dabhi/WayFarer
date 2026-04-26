@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../models/shop.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/api_service.dart';
+import '../../theme/game_theme.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -42,7 +44,10 @@ class _MapScreenState extends State<MapScreen> {
     if (!loc.hasRealLocation || loc.lat == null || loc.lng == null) return;
     setState(() => _loading = true);
     try {
-      final shops = await context.read<ApiService>().getMapShops(loc.lat!, loc.lng!, radius: _radius);
+      final api = context.read<ApiService>();
+      final userId = context.read<AuthProvider>().user?.id;
+      await api.autoNearbyCoupons(loc.lat!, loc.lng!, userId: userId, radius: _radius);
+      final shops = await api.getMapShops(loc.lat!, loc.lng!, radius: _radius, userId: userId);
       if (mounted) setState(() => _shops = shops);
     } catch (_) {
     } finally {
@@ -52,9 +57,9 @@ class _MapScreenState extends State<MapScreen> {
 
   Color _busynessColor(String b) {
     switch (b) {
-      case 'quiet': return Colors.green;
-      case 'busy': return Colors.red;
-      default: return Colors.orange;
+      case 'quiet': return GameTheme.grass;
+      case 'busy': return GameTheme.berry;
+      default: return GameTheme.carrot;
     }
   }
 
@@ -69,14 +74,14 @@ class _MapScreenState extends State<MapScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.my_location, color: Color(0xFFF97316), size: 40),
+                const Icon(Icons.my_location, color: GameTheme.carrot, size: 40),
                 const SizedBox(height: 16),
                 const Text('Enable location to find nearby offers', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text(
                   loc.error ?? 'City Wallet uses your current location instead of demo coordinates.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade600),
+                  style: const TextStyle(color: GameTheme.bark),
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
@@ -114,7 +119,7 @@ class _MapScreenState extends State<MapScreen> {
                   point: center,
                   width: 24,
                   height: 24,
-                  child: const Icon(Icons.my_location, color: Colors.blue, size: 24),
+                  child: const Icon(Icons.my_location, color: GameTheme.water, size: 24),
                 ),
                 ..._shops.map((shop) => Marker(
                       point: LatLng(shop.lat, shop.lng),
@@ -130,8 +135,9 @@ class _MapScreenState extends State<MapScreen> {
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: _busynessColor(shop.busyness),
-                                shape: BoxShape.circle,
-                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: GameTheme.bark, width: 2),
+                                boxShadow: const [BoxShadow(color: GameTheme.soil, blurRadius: 0, offset: Offset(3, 3))],
                               ),
                               child: const Icon(Icons.storefront, color: Colors.white, size: 16),
                             ),
@@ -139,12 +145,13 @@ class _MapScreenState extends State<MapScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                 decoration: BoxDecoration(
-                                  color: Colors.deepOrange,
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: GameTheme.wheat,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: GameTheme.bark),
                                 ),
                                 child: Text(
                                   '${shop.activeCouponCount}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(color: GameTheme.ink, fontSize: 10, fontWeight: FontWeight.w900),
                                 ),
                               ),
                           ],
@@ -156,19 +163,19 @@ class _MapScreenState extends State<MapScreen> {
           ),
           // Top bar
           Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 16,
-            right: 16,
+            top: MediaQuery.of(context).padding.top + 6,
+            left: 8,
+            right: 8,
             child: _TopBar(
-              movementLabel: loc.movementLabel,
               loading: _loading,
               onRefresh: _loadShops,
             ),
           ),
           // Radius chips
           Positioned(
-            top: MediaQuery.of(context).padding.top + 64,
-            left: 16,
+            top: MediaQuery.of(context).padding.top + 72,
+            left: 8,
+            right: 8,
             child: _RadiusChips(
               selected: _radius,
               onSelected: (r) {
@@ -185,50 +192,47 @@ class _MapScreenState extends State<MapScreen> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: _ShopListSheet(shops: _shops),
+            child: _ShopListSheet(
+              shops: _shops,
+              loading: _loading,
+              radius: _radius,
+              onExpandRadius: () {
+                setState(() {
+                  _radius = 5000;
+                  _shops = [];
+                });
+                _loadShops();
+              },
+            ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.small(
         onPressed: () => _mapController.move(center, 15),
-        backgroundColor: Colors.white,
-        child: const Icon(Icons.my_location, color: Colors.blue),
+        backgroundColor: GameTheme.cream,
+        child: const Icon(Icons.my_location, color: GameTheme.water),
       ),
     );
   }
 }
 
 class _TopBar extends StatelessWidget {
-  final String movementLabel;
   final bool loading;
   final VoidCallback onRefresh;
 
-  const _TopBar({required this.movementLabel, required this.loading, required this.onRefresh});
+  const _TopBar({required this.loading, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: GameTheme.panel(color: GameTheme.cream),
       child: Row(
         children: [
-          const Icon(Icons.location_city, color: Color(0xFFF97316)),
+          const Icon(Icons.location_city, color: GameTheme.carrot),
           const SizedBox(width: 8),
-          const Text('City Wallet', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('City Wallet', style: TextStyle(color: GameTheme.ink, fontWeight: FontWeight.w900)),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(movementLabel, style: TextStyle(fontSize: 11, color: Colors.blue.shade700)),
-          ),
-          const SizedBox(width: 8),
           loading
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
               : IconButton(
@@ -250,50 +254,110 @@ class _RadiusChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [200, 500, 800, 2000].map((r) {
-        final label = r >= 1000 ? '${r ~/ 1000}km' : '${r}m';
-        final isSelected = r == selected;
-        return Padding(
-          padding: const EdgeInsets.only(right: 6),
-          child: GestureDetector(
-            onTap: () => onSelected(r),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFF97316) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black87,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: Row(
+        children: [200, 500, 800, 2000, 5000].map((r) {
+          final label = r >= 1000 ? '${r ~/ 1000}km' : '${r}m';
+          final isSelected = r == selected;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => onSelected(r),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected ? GameTheme.carrot : GameTheme.cream,
+                  borderRadius: BorderRadius.circular(GameTheme.radius),
+                  border: Border.all(color: GameTheme.bark, width: 2),
+                  boxShadow: const [BoxShadow(color: GameTheme.soil, blurRadius: 0, offset: Offset(2, 2))],
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : GameTheme.ink,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }
 
 class _ShopListSheet extends StatelessWidget {
   final List<Shop> shops;
-  const _ShopListSheet({required this.shops});
+  final bool loading;
+  final int radius;
+  final VoidCallback onExpandRadius;
+
+  const _ShopListSheet({
+    required this.shops,
+    required this.loading,
+    required this.radius,
+    required this.onExpandRadius,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (shops.isEmpty) return const SizedBox.shrink();
+    if (shops.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: GameTheme.cream,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(GameTheme.radius)),
+          border: Border(top: BorderSide(color: GameTheme.bark, width: 3)),
+          boxShadow: [BoxShadow(color: GameTheme.soil, blurRadius: 0, offset: Offset(0, -4))],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(color: GameTheme.bark, borderRadius: BorderRadius.circular(2)),
+              ),
+              const Icon(Icons.storefront_outlined, color: GameTheme.bark),
+              const SizedBox(height: 8),
+              Text(
+                loading ? 'Looking for nearby shops...' : 'No registered shops within ${radius >= 1000 ? '${radius ~/ 1000}km' : '${radius}m'}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: GameTheme.ink, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Seed shops near this emulator location or switch the emulator location to where your shops are.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: GameTheme.bark, fontSize: 12),
+              ),
+              if (!loading && radius < 5000) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: onExpandRadius,
+                  icon: const Icon(Icons.travel_explore),
+                  label: const Text('Search 5km'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
     return Container(
-      height: 200,
+      height: 224,
       decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12)],
+        color: GameTheme.cream,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(GameTheme.radius)),
+        border: Border(top: BorderSide(color: GameTheme.bark, width: 3)),
+        boxShadow: [BoxShadow(color: GameTheme.soil, blurRadius: 0, offset: Offset(0, -4))],
       ),
       child: Column(
         children: [
@@ -301,7 +365,7 @@ class _ShopListSheet extends StatelessWidget {
             width: 36,
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(color: GameTheme.bark, borderRadius: BorderRadius.circular(2)),
           ),
           Expanded(
             child: ListView.builder(
@@ -324,9 +388,9 @@ class _ShopCard extends StatelessWidget {
 
   Color get _busynessColor {
     switch (shop.busyness) {
-      case 'quiet': return Colors.green;
-      case 'busy': return Colors.red;
-      default: return Colors.orange;
+      case 'quiet': return GameTheme.grass;
+      case 'busy': return GameTheme.berry;
+      default: return GameTheme.carrot;
     }
   }
 
@@ -335,18 +399,22 @@ class _ShopCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/consumer/shop/${shop.id}'),
       child: Container(
-        width: 180,
-        margin: const EdgeInsets.only(right: 12, bottom: 8),
+        width: 210,
+        margin: const EdgeInsets.only(right: 16, bottom: 8),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: GameTheme.inset(color: const Color(0xFFFFF8DF), border: GameTheme.wheat),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(shop.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text(shop.category, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+            Text(shop.name, style: const TextStyle(color: GameTheme.ink, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 12),
+            if (shop.coupons?.isNotEmpty == true)
+              _OfferPreview(coupon: shop.coupons!.first)
+            else
+              Text(
+                'No live offer yet',
+                style: const TextStyle(color: GameTheme.soil, fontSize: 12, fontWeight: FontWeight.w700),
+              ),
             const Spacer(),
             Row(
               children: [
@@ -355,26 +423,93 @@ class _ShopCard extends StatelessWidget {
                   decoration: BoxDecoration(color: _busynessColor, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 4),
-                Text(shop.busyness, style: const TextStyle(fontSize: 12)),
+                Text(shop.busyness, style: const TextStyle(color: GameTheme.ink, fontSize: 12, fontWeight: FontWeight.w700)),
                 const Spacer(),
                 if (shop.activeCouponCount > 0)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.deepOrange.shade50,
-                      borderRadius: BorderRadius.circular(8),
+                      color: GameTheme.parchment,
+                      borderRadius: BorderRadius.circular(GameTheme.radius),
+                      border: Border.all(color: GameTheme.carrot),
                     ),
                     child: Text(
-                      '${shop.activeCouponCount} offers',
-                      style: TextStyle(fontSize: 11, color: Colors.deepOrange.shade700),
+                      '${shop.activeCouponCount} offer${shop.activeCouponCount == 1 ? '' : 's'}',
+                      style: const TextStyle(fontSize: 11, color: GameTheme.carrot, fontWeight: FontWeight.w900),
                     ),
                   ),
               ],
             ),
             if (shop.distanceM != null)
-              Text('${shop.distanceM!.toStringAsFixed(0)} m away', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+              Text('${shop.distanceM!.toStringAsFixed(0)} m away', style: const TextStyle(fontSize: 11, color: GameTheme.soil)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _OfferPreview extends StatelessWidget {
+  final dynamic coupon;
+  const _OfferPreview({required this.coupon});
+
+  @override
+  Widget build(BuildContext context) {
+    final target = coupon.offerTarget as String;
+    final headline = coupon.headline as String;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(9),
+      decoration: GameTheme.inset(color: GameTheme.parchment, border: GameTheme.carrot),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: GameTheme.carrot,
+                  borderRadius: BorderRadius.circular(GameTheme.radius),
+                  border: Border.all(color: GameTheme.bark),
+                ),
+                child: Text(
+                  '${coupon.discountPct.toStringAsFixed(0)}% off',
+                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'EUR ${coupon.cashbackEur.toStringAsFixed(2)} back',
+                style: const TextStyle(color: GameTheme.grass, fontSize: 10, fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            headline,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: GameTheme.ink,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            target,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: GameTheme.bark,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+            ),
+          ),
+        ],
       ),
     );
   }
