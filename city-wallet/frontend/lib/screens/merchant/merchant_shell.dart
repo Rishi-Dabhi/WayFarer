@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../theme/game_theme.dart';
 
 class MerchantShell extends StatelessWidget {
   final StatefulNavigationShell shell;
@@ -12,6 +13,12 @@ class MerchantShell extends StatelessWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
         onDestinationSelected: shell.goBranch,
+        backgroundColor: GameTheme.cream,
+        indicatorColor: GameTheme.wheat,
+        surfaceTintColor: Colors.transparent,
+        labelTextStyle: MaterialStateProperty.all(
+          const TextStyle(fontWeight: FontWeight.w900, color: GameTheme.ink, fontSize: 12),
+        ),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
           NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: 'Products'),

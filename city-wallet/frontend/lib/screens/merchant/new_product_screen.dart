@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
+import '../../theme/game_theme.dart';
 
 class NewProductScreen extends StatefulWidget {
   final String shopId;
@@ -49,60 +50,74 @@ class _NewProductScreenState extends State<NewProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(title: const Text('Add Product'), backgroundColor: Colors.white, elevation: 0),
+      appBar: AppBar(title: const Text('Add Product')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(controller: _name, decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder(), filled: true, fillColor: Colors.white)),
-            const SizedBox(height: 12),
-            TextField(controller: _description, decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder(), filled: true, fillColor: Colors.white), maxLines: 2),
-            const SizedBox(height: 12),
-            TextField(controller: _price, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Price (€)', border: OutlineInputBorder(), filled: true, fillColor: Colors.white, prefixText: '€ ')),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: GameTheme.panel(color: GameTheme.parchment),
+              child: Column(
+                children: [
+                  TextField(controller: _name, decoration: const InputDecoration(labelText: 'Name')),
+                  const SizedBox(height: 12),
+                  TextField(controller: _description, maxLines: 2, decoration: const InputDecoration(labelText: 'Description')),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _price,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'Price', prefixText: '€ '),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: GameTheme.panel(color: GameTheme.parchment),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Category', style: TextStyle(fontWeight: FontWeight.w900, color: GameTheme.ink)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: ['coffee', 'food', 'drinks', 'retail', 'other'].map((o) => ChoiceChip(
+                      label: Text(o),
+                      selected: _category == o,
+                      onSelected: (_) => setState(() => _category = o),
+                    )).toList(),
+                  ),
+                  const Divider(color: GameTheme.wheat, height: 24),
+                  const Text('Stock Level', style: TextStyle(fontWeight: FontWeight.w900, color: GameTheme.ink)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    children: ['low', 'normal', 'high'].map((o) => ChoiceChip(
+                      label: Text(o),
+                      selected: _stock == o,
+                      onSelected: (_) => setState(() => _stock = o),
+                    )).toList(),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
-            const Text('Category', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            _ChipGroup(options: ['coffee', 'food', 'drinks', 'retail', 'other'], selected: _category, onSelected: (v) => setState(() => _category = v)),
-            const SizedBox(height: 16),
-            const Text('Stock Level', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            _ChipGroup(options: ['low', 'normal', 'high'], selected: _stock, onSelected: (v) => setState(() => _stock = v)),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF97316), padding: const EdgeInsets.symmetric(vertical: 14)),
-              child: _saving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Add Product', style: TextStyle(fontSize: 16)),
+            SizedBox(
+              height: 48,
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Add Product', style: TextStyle(fontSize: 16)),
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _ChipGroup extends StatelessWidget {
-  final List<String> options;
-  final String selected;
-  final void Function(String) onSelected;
-
-  const _ChipGroup({required this.options, required this.selected, required this.onSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      children: options.map((o) {
-        final isSelected = o == selected;
-        return ChoiceChip(
-          label: Text(o),
-          selected: isSelected,
-          onSelected: (_) => onSelected(o),
-          selectedColor: const Color(0xFFF97316),
-          labelStyle: TextStyle(color: isSelected ? Colors.white : null),
-        );
-      }).toList(),
     );
   }
 }

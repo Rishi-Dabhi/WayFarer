@@ -26,6 +26,12 @@ class Config {
   static const double offerTriggerDistanceM = 200;
   static const int offerCooldownMs = 180000;
 
+  // Stripe
+  static String get stripePk {
+    const env = String.fromEnvironment('STRIPE_PK');
+    return env;
+  }
+
   // Polling
   static const int signalRefreshMs = 60000;
   static const int mapRefreshMs = 60000;

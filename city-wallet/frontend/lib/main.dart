@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'config.dart';
 import 'providers/auth_provider.dart';
 import 'providers/location_provider.dart';
 import 'services/api_service.dart';
@@ -29,6 +31,11 @@ import 'screens/merchant/scan_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final stripePk = Config.stripePk;
+  if (stripePk.isNotEmpty) {
+    Stripe.publishableKey = stripePk;
+    await Stripe.instance.applySettings();
+  }
   final storage = StorageService();
   final api = ApiService(storage);
   final auth = AuthProvider(api, storage);
@@ -90,6 +97,56 @@ class CityWalletApp extends StatelessWidget {
                 foregroundColor: GameTheme.ink,
                 side: const BorderSide(color: GameTheme.bark, width: 2),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(GameTheme.radius)),
+              ),
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: GameTheme.cream,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(GameTheme.radius),
+                borderSide: const BorderSide(color: GameTheme.bark, width: 2),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(GameTheme.radius),
+                borderSide: const BorderSide(color: GameTheme.bark, width: 2),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(GameTheme.radius),
+                borderSide: const BorderSide(color: GameTheme.carrot, width: 2),
+              ),
+              labelStyle: const TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700),
+              prefixStyle: const TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700),
+              suffixStyle: const TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700),
+              prefixIconColor: GameTheme.bark,
+              suffixIconColor: GameTheme.bark,
+            ),
+            switchTheme: SwitchThemeData(
+              thumbColor: MaterialStateProperty.resolveWith((s) =>
+                  s.contains(MaterialState.selected) ? GameTheme.carrot : GameTheme.bark),
+              trackColor: MaterialStateProperty.resolveWith((s) =>
+                  s.contains(MaterialState.selected) ? GameTheme.wheat : GameTheme.parchment),
+            ),
+            chipTheme: ChipThemeData(
+              selectedColor: GameTheme.carrot,
+              backgroundColor: GameTheme.parchment,
+              side: const BorderSide(color: GameTheme.bark, width: 1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(GameTheme.radius)),
+              labelStyle: const TextStyle(fontWeight: FontWeight.w700, color: GameTheme.ink),
+              secondaryLabelStyle: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+            ),
+            navigationBarTheme: NavigationBarThemeData(
+              backgroundColor: GameTheme.cream,
+              indicatorColor: GameTheme.wheat,
+              surfaceTintColor: Colors.transparent,
+              labelTextStyle: MaterialStateProperty.all(
+                const TextStyle(fontWeight: FontWeight.w900, color: GameTheme.ink, fontSize: 12),
+              ),
+            ),
+            dialogTheme: DialogThemeData(
+              backgroundColor: GameTheme.parchment,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(GameTheme.radius),
+                side: const BorderSide(color: GameTheme.bark, width: 2),
               ),
             ),
           ),

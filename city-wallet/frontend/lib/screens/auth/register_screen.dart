@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/game_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -28,85 +29,103 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final auth = context.read<AuthProvider>();
     final ok = await auth.register(_name.text.trim(), _email.text.trim(), _password.text, _role);
     if (!mounted) return;
-    if (ok) {
-      context.go(_role == 'merchant' ? '/merchant' : '/consumer');
-    }
+    if (ok) context.go(_role == 'merchant' ? '/merchant' : '/consumer');
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: const Color(0xFFFFF7DF),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/login'),
         ),
+        title: const Text('Create Account'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Create Account',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _name,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_outlined),
-                  border: OutlineInputBorder(),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: GameTheme.panel(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: _name,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name',
+                        prefixIcon: Icon(Icons.person_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _password,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: Icon(Icons.lock_outlined),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: GameTheme.panel(color: GameTheme.parchment),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'I am a…',
+                      style: TextStyle(fontWeight: FontWeight.w900, color: GameTheme.ink),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(child: _RoleChip(label: 'Consumer', value: 'consumer', selected: _role, onTap: (v) => setState(() => _role = v))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _RoleChip(label: 'Merchant', value: 'merchant', selected: _role, onTap: (v) => setState(() => _role = v))),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _password,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outlined),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text('I am a…', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(child: _RoleChip(label: 'Consumer', value: 'consumer', selected: _role, onTap: (v) => setState(() => _role = v))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _RoleChip(label: 'Merchant', value: 'merchant', selected: _role, onTap: (v) => setState(() => _role = v))),
-                ],
               ),
               if (auth.error != null) ...[
                 const SizedBox(height: 12),
-                Text(auth.error!, style: const TextStyle(color: Colors.red)),
-              ],
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: auth.loading ? null : _register,
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFF97316),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: GameTheme.inset(color: const Color(0xFFFFE0DC), border: GameTheme.berry),
+                  child: Text(
+                    auth.error!,
+                    style: const TextStyle(color: GameTheme.berry, fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
                 ),
-                child: auth.loading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Create Account', style: TextStyle(fontSize: 16)),
+              ],
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 48,
+                child: FilledButton(
+                  onPressed: auth.loading ? null : _register,
+                  child: auth.loading
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Create Account', style: TextStyle(fontSize: 16)),
+                ),
               ),
             ],
           ),
@@ -130,16 +149,19 @@ class _RoleChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFF97316) : Colors.white,
-          border: Border.all(color: isSelected ? const Color(0xFFF97316) : Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? GameTheme.carrot : GameTheme.cream,
+          border: Border.all(color: isSelected ? GameTheme.carrot : GameTheme.bark, width: 2),
+          borderRadius: BorderRadius.circular(GameTheme.radius),
+          boxShadow: isSelected
+              ? const [BoxShadow(color: GameTheme.soil, blurRadius: 0, offset: Offset(3, 3))]
+              : null,
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : GameTheme.ink,
+            fontWeight: FontWeight.w900,
           ),
         ),
       ),

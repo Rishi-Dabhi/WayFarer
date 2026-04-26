@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from database import get_db
 from middleware.auth import require_merchant
 from services.stripe_service import create_cashback_transfer
-from services.preference_learner import update_after_redemption
+from services.preference_learner import update_after_redemption, get_preferences
 from services.qr_service import generate_qr_token, verify_qr_token
 from services.push_service import send_push
 from services.payone_simulator import get_shop_busyness, haversine_m
@@ -275,6 +275,7 @@ async def auto_nearby_coupons(body: AutoNearbyIn):
     local_now = datetime.now()
     time_ctx = _time_context(local_now)
     weather = await _weather_context(body.lat, body.lng)
+    user_prefs = await get_preferences(body.user_id) if body.user_id else {}
     candidates = []
 
     for shop in shops:
@@ -351,12 +352,22 @@ async def auto_nearby_coupons(body: AutoNearbyIn):
         discovery_radius = max(body.radius_m, 1)
         distance_score = 1 / (1 + (distance_m / discovery_radius))
         trigger_score = 1 / (1 + (distance_m / max(trigger_radius, 1)))
-        score = quiet_score * 0.40 + distance_score * 0.25 + context_score * 0.25 + trigger_score * 0.10
+        cat_boost = user_prefs.get("category_affinity", {}).get(shop["category"] or "", 0.0)
+        prod_boost = user_prefs.get("product_affinity", {}).get(str(product["id"]), 0.0)
+        pref_score = min(cat_boost * 0.6 + prod_boost * 0.4, 1.0)
+        score = (
+            quiet_score * 0.35
+            + distance_score * 0.22
+            + context_score * 0.22
+            + trigger_score * 0.09
+            + pref_score * 0.12
+        )
         score_components = {
             "quiet": round(quiet_score, 3),
             "distance": round(distance_score, 3),
             "context": round(context_score, 3),
             "trigger": round(trigger_score, 3),
+            "preference": round(pref_score, 3),
         }
         urgency = "high" if ratio <= threshold * 0.5 else "normal"
         if distance_m > body.radius_m:
@@ -537,10 +548,12 @@ async def redeem_coupon(body: RedeemIn, merchant: dict = Depends(require_merchan
     db = await get_db()
     async with db.execute(
         "SELECT c.*, s.merchant_id, s.category as shop_category, "
-        "       u.stripe_account_id "
+        "       u.stripe_account_id, "
+        "       p.price_cents as product_price_cents, p.category as product_category "
         "FROM coupons c "
         "JOIN shops s ON c.shop_id=s.id "
         "LEFT JOIN users u ON c.user_id=u.id "
+        "LEFT JOIN products p ON c.product_id=p.id "
         "WHERE c.qr_token=?",
         (body.token,),
     ) as cur:
@@ -604,11 +617,40 @@ async def redeem_coupon(body: RedeemIn, merchant: dict = Depends(require_merchan
     ) as cur:
         txn_id = cur.lastrowid
 
+    # Record purchase event
+    if coupon["user_id"]:
+        await db.execute(
+            """INSERT INTO purchase_events
+               (user_id, shop_id, coupon_id, product_id, amount_cents,
+                cashback_cents, discount_pct, source)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (
+                coupon["user_id"],
+                coupon["shop_id"],
+                coupon["id"],
+                coupon["product_id"],
+                coupon["product_price_cents"] or 0,
+                cashback,
+                coupon["discount_pct"],
+                "qr_redemption",
+            ),
+        )
+
     await db.commit()
 
-    # Update user preferences
+    # Update user preferences with richer context
     if coupon["user_id"]:
-        await update_after_redemption(coupon["user_id"], coupon["shop_category"])
+        from datetime import datetime as _dt
+        await update_after_redemption(
+            coupon["user_id"],
+            coupon["shop_category"],
+            product_id=coupon["product_id"],
+            product_category=coupon["product_category"],
+            amount_cents=coupon["product_price_cents"] or 0,
+            cashback_cents=cashback,
+            discount_pct=coupon["discount_pct"],
+            hour=_dt.utcnow().hour,
+        )
 
     async with db.execute(
         "SELECT balance_cents FROM merchant_wallets WHERE merchant_id=?", (body.merchant_id,)
@@ -633,6 +675,22 @@ async def user_coupons(user_id: int):
         "LEFT JOIN products p ON c.product_id=p.id "
         "WHERE c.user_id=? ORDER BY c.generated_at DESC",
         (user_id,),
+    ) as cur:
+        rows = await cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+@router.get("/user/{user_id}/history")
+async def user_coupon_history(user_id: int, limit: int = 4):
+    db = await get_db()
+    limit = max(1, min(limit, 10))
+    async with db.execute(
+        "SELECT c.*, s.name AS shop_name, p.name AS product_name "
+        "FROM coupons c JOIN shops s ON c.shop_id=s.id "
+        "LEFT JOIN products p ON c.product_id=p.id "
+        "WHERE c.user_id=? AND c.status IN ('redeemed', 'expired') "
+        "ORDER BY COALESCE(c.redeemed_at, c.generated_at) DESC LIMIT ?",
+        (user_id, limit),
     ) as cur:
         rows = await cur.fetchall()
     return [dict(row) for row in rows]

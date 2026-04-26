@@ -93,7 +93,24 @@ CREATE TABLE IF NOT EXISTS user_preferences (
   category_affinity        TEXT DEFAULT '{}',
   preferred_discount_range TEXT DEFAULT '{"min":10,"max":25}',
   active_hours             TEXT DEFAULT '[]',
+  product_affinity         TEXT DEFAULT '{}',
+  avg_spend_cents          INTEGER DEFAULT 0,
+  purchase_count           INTEGER DEFAULT 0,
   last_updated             TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS purchase_events (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id        INTEGER REFERENCES users(id),
+  shop_id        INTEGER NOT NULL REFERENCES shops(id),
+  coupon_id      INTEGER NOT NULL REFERENCES coupons(id),
+  product_id     INTEGER REFERENCES products(id),
+  amount_cents   INTEGER NOT NULL DEFAULT 0,
+  cashback_cents INTEGER NOT NULL DEFAULT 0,
+  discount_pct   INTEGER NOT NULL DEFAULT 0,
+  source         TEXT NOT NULL DEFAULT 'qr_redemption',
+  basket_json    TEXT,
+  purchased_at   TEXT DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS payone_density (
@@ -118,3 +135,5 @@ CREATE INDEX IF NOT EXISTS idx_payone_shop   ON payone_density(shop_id);
 CREATE INDEX IF NOT EXISTS idx_payone_time   ON payone_density(recorded_at);
 CREATE INDEX IF NOT EXISTS idx_shop_visits_shop_time ON shop_visits(shop_id, entered_at);
 CREATE INDEX IF NOT EXISTS idx_shop_visits_user_time ON shop_visits(user_id, entered_at);
+CREATE INDEX IF NOT EXISTS idx_purchase_events_user ON purchase_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_events_shop ON purchase_events(shop_id, purchased_at);

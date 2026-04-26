@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../theme/game_theme.dart';
 
 enum _ScanState { scanning, validating, preview, confirming, success }
 
@@ -33,7 +34,7 @@ class _ScanScreenState extends State<ScanScreen> {
     try {
       final data = await context.read<ApiService>().validateQR(token);
       if (mounted) setState(() { _couponData = data; _state = _ScanState.preview; });
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() { _error = 'Invalid or expired QR code'; _state = _ScanState.scanning; _processed = false; });
     }
   }
@@ -45,7 +46,7 @@ class _ScanScreenState extends State<ScanScreen> {
     try {
       await context.read<ApiService>().redeemCoupon(_qrToken!, user.id);
       if (mounted) setState(() => _state = _ScanState.success);
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() { _error = 'Redemption failed'; _state = _ScanState.preview; });
     }
   }
@@ -68,10 +69,14 @@ class _ScanScreenState extends State<ScanScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: switch (_state) {
-        _ScanState.scanning || _ScanState.validating => _CameraView(onDetect: _onDetect, loading: _state == _ScanState.validating, error: _error),
-        _ScanState.preview => _PreviewView(data: _couponData!, onConfirm: _redeem, onCancel: _reset),
-        _ScanState.confirming => const Center(child: CircularProgressIndicator(color: Colors.white)),
-        _ScanState.success => _SuccessView(data: _couponData!, onScanAnother: _reset),
+        _ScanState.scanning || _ScanState.validating =>
+          _CameraView(onDetect: _onDetect, loading: _state == _ScanState.validating, error: _error),
+        _ScanState.preview =>
+          _PreviewView(data: _couponData!, onConfirm: _redeem, onCancel: _reset),
+        _ScanState.confirming =>
+          const Center(child: CircularProgressIndicator(color: GameTheme.carrot)),
+        _ScanState.success =>
+          _SuccessView(data: _couponData!, onScanAnother: _reset),
       },
     );
   }
@@ -81,7 +86,6 @@ class _CameraView extends StatelessWidget {
   final void Function(BarcodeCapture) onDetect;
   final bool loading;
   final String? error;
-
   const _CameraView({required this.onDetect, required this.loading, this.error});
 
   @override
@@ -91,31 +95,30 @@ class _CameraView extends StatelessWidget {
         MobileScanner(onDetect: onDetect),
         Center(
           child: Container(
-            width: 240,
-            height: 240,
+            width: 240, height: 240,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.orange, width: 3),
-              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: GameTheme.carrot, width: 3),
+              borderRadius: BorderRadius.circular(GameTheme.radius),
             ),
           ),
         ),
         if (loading)
           Container(
             color: Colors.black54,
-            child: const Center(child: CircularProgressIndicator(color: Colors.orange)),
+            child: const Center(child: CircularProgressIndicator(color: GameTheme.carrot)),
           ),
         Positioned(
-          bottom: 60,
-          left: 0,
-          right: 0,
+          bottom: 60, left: 0, right: 0,
           child: Column(
             children: [
-              const Text('Point camera at customer\'s QR code',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 14)),
+              const Text(
+                'Point camera at customer\'s QR code',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w700),
+              ),
               if (error != null) ...[
                 const SizedBox(height: 8),
-                Text(error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.redAccent)),
+                Text(error!, textAlign: TextAlign.center, style: const TextStyle(color: GameTheme.berry, fontWeight: FontWeight.w700)),
               ],
             ],
           ),
@@ -129,7 +132,6 @@ class _PreviewView extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback onConfirm;
   final VoidCallback onCancel;
-
   const _PreviewView({required this.data, required this.onConfirm, required this.onCancel});
 
   @override
@@ -138,38 +140,64 @@ class _PreviewView extends StatelessWidget {
     final discountPct = (data['discount_pct'] ?? 0).toStringAsFixed(0);
 
     return Container(
-      color: Colors.white,
+      color: const Color(0xFFFFF7DF),
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          const SizedBox(height: 20),
-          Text(data['headline'] ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          if (data['shop_name'] != null)
-            Text(data['shop_name'], style: TextStyle(color: Colors.grey.shade600)),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: _StatBox('$discountPct%', 'Discount', Colors.orange)),
-              const SizedBox(width: 12),
-              Expanded(child: _StatBox('€$cashbackEur', 'Cashback', Colors.green)),
-            ],
-          ),
-          if (data['body_text'] != null) ...[
-            const SizedBox(height: 16),
-            Text(data['body_text'], style: TextStyle(color: Colors.grey.shade700), maxLines: 2, overflow: TextOverflow.ellipsis),
-          ],
-          const Spacer(),
-          FilledButton(
-            onPressed: onConfirm,
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.green,
-              minimumSize: const Size(double.infinity, 52),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: GameTheme.panel(color: GameTheme.parchment),
+            child: Column(
+              children: [
+                Text(
+                  data['headline'] ?? '',
+                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: GameTheme.ink),
+                  textAlign: TextAlign.center,
+                ),
+                if (data['shop_name'] != null) ...[
+                  const SizedBox(height: 6),
+                  Text(data['shop_name'], style: const TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700, fontSize: 13)),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: _StatBox('$discountPct%', 'Discount', GameTheme.carrot)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _StatBox('€$cashbackEur', 'Cashback', GameTheme.grass)),
+                  ],
+                ),
+                if (data['body_text'] != null) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    data['body_text'],
+                    style: const TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700, fontSize: 13),
+                    maxLines: 2, overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
             ),
-            child: const Text('Confirm Redemption', style: TextStyle(fontSize: 16)),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity, height: 50,
+            child: FilledButton(
+              onPressed: onConfirm,
+              style: FilledButton.styleFrom(
+                backgroundColor: GameTheme.grass,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(GameTheme.radius),
+                  side: const BorderSide(color: GameTheme.bark, width: 2),
+                ),
+              ),
+              child: const Text('Confirm Redemption', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            ),
           ),
           const SizedBox(height: 12),
-          TextButton(onPressed: onCancel, child: const Text('Cancel')),
+          TextButton(
+            onPressed: onCancel,
+            child: const Text('Cancel', style: TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700)),
+          ),
         ],
       ),
     );
@@ -185,14 +213,11 @@ class _StatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-      ),
+      decoration: GameTheme.inset(color: GameTheme.cream, border: color),
       child: Column(
         children: [
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-          Text(label, style: TextStyle(color: color.withOpacity(0.8), fontSize: 12)),
+          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color)),
+          Text(label, style: TextStyle(color: color.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -202,36 +227,47 @@ class _StatBox extends StatelessWidget {
 class _SuccessView extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback onScanAnother;
-
   const _SuccessView({required this.data, required this.onScanAnother});
 
   @override
   Widget build(BuildContext context) {
     final cashbackEur = ((data['cashback_cents'] ?? 0) / 100).toStringAsFixed(2);
     return Container(
-      color: Colors.white,
+      color: const Color(0xFFFFF7DF),
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-              child: const Icon(Icons.check, color: Colors.white, size: 44),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Container(
+            padding: const EdgeInsets.all(28),
+            decoration: GameTheme.panel(color: GameTheme.parchment),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72, height: 72,
+                  decoration: BoxDecoration(
+                    color: GameTheme.grass,
+                    borderRadius: BorderRadius.circular(GameTheme.radius),
+                    border: Border.all(color: GameTheme.bark, width: 2),
+                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 40),
+                ),
+                const SizedBox(height: 18),
+                const Text('Redeemed!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: GameTheme.ink)),
+                const SizedBox(height: 6),
+                Text('€$cashbackEur cashback sent to customer',
+                    style: const TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity, height: 44,
+                  child: FilledButton(
+                    onPressed: onScanAnother,
+                    child: const Text('Scan Another'),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            const Text('Redeemed!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('€$cashbackEur cashback sent to customer',
-                style: TextStyle(color: Colors.grey.shade600)),
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: onScanAnother,
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF97316)),
-              child: const Text('Scan Another'),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -89,6 +89,14 @@ class ApiService {
     return (res.data as List).map((c) => Coupon.fromJson(c)).toList();
   }
 
+  Future<List<Coupon>> getUserCouponHistory(int userId, {int limit = 4}) async {
+    final res = await _dio.get(
+      '/api/coupons/user/$userId/history',
+      queryParameters: {'limit': limit},
+    );
+    return (res.data as List).map((c) => Coupon.fromJson(c)).toList();
+  }
+
   Future<Map<String, dynamic>> validateQR(String token) async {
     final res = await _dio.get('/api/coupons/validate/$token');
     return res.data;

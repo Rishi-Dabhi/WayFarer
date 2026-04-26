@@ -30,6 +30,9 @@ async def init_db() -> None:
         "ALTER TABLE shops ADD COLUMN auto_trigger_radius_m INTEGER DEFAULT 200",
         "ALTER TABLE shops ADD COLUMN quiet_threshold_ratio REAL DEFAULT 0.6",
         "ALTER TABLE shops ADD COLUMN coupon_frequency_minutes INTEGER DEFAULT 60",
+        "ALTER TABLE user_preferences ADD COLUMN product_affinity TEXT DEFAULT '{}'",
+        "ALTER TABLE user_preferences ADD COLUMN avg_spend_cents INTEGER DEFAULT 0",
+        "ALTER TABLE user_preferences ADD COLUMN purchase_count INTEGER DEFAULT 0",
     ):
         try:
             await db.execute(statement)

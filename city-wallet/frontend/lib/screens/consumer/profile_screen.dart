@@ -27,8 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = context.read<AuthProvider>().user;
     if (user == null) return;
     try {
-      final coupons = await context.read<ApiService>().getUserCoupons(user.id);
-      if (mounted) setState(() => _history = coupons.take(_historyLimit).toList());
+      final coupons = await context.read<ApiService>().getUserCouponHistory(user.id, limit: _historyLimit);
+      if (mounted) setState(() => _history = coupons);
     } catch (_) {
       if (mounted) setState(() => _history = []);
     }
@@ -165,7 +165,7 @@ class _HistoryPanel extends StatelessWidget {
           const SizedBox(height: 12),
           if (history.isEmpty)
             const Text(
-              'No coupon activity yet.',
+              'Used coupons will appear here.',
               style: TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700),
             )
           else

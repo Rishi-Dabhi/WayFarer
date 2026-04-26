@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../theme/game_theme.dart';
 
 class CampaignScreen extends StatefulWidget {
   const CampaignScreen({super.key});
@@ -25,7 +26,7 @@ class _CampaignScreenState extends State<CampaignScreen> {
   final _frequency = TextEditingController(text: '15');
   List<String> _quietHours = ['09:00-11:00'];
 
-  final _allQuietHours = ['09:00-11:00', '14:00-16:00', '15:00-17:00', '20:00-22:00'];
+  static const _allQuietHours = ['09:00-11:00', '14:00-16:00', '15:00-17:00', '20:00-22:00'];
 
   @override
   void initState() {
@@ -50,8 +51,8 @@ class _CampaignScreenState extends State<CampaignScreen> {
     try {
       final shopData = await context.read<ApiService>().getMerchantShop(user.id);
       _shopId = shopData['id'] ?? shopData['shop_id'];
-      if (shopData['is_active'] != null) _active = shopData['is_active'];
-      if (shopData['auto_coupon_enabled'] != null) _autoEnabled = shopData['auto_coupon_enabled'];
+      if (shopData['is_active'] != null) _active = shopData['is_active'] == true || shopData['is_active'] == 1;
+      if (shopData['auto_coupon_enabled'] != null) _autoEnabled = shopData['auto_coupon_enabled'] == true || shopData['auto_coupon_enabled'] == 1;
       if (shopData['campaign_goal'] != null) _goal = shopData['campaign_goal'];
       if (shopData['max_discount_pct'] != null) _maxDiscount.text = '${shopData['max_discount_pct']}';
       if (shopData['cashback_budget_per_coupon_cents'] != null)
@@ -83,7 +84,8 @@ class _CampaignScreenState extends State<CampaignScreen> {
         'target_quiet_hours': _quietHours,
       });
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Campaign rules saved')));
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
@@ -91,50 +93,51 @@ class _CampaignScreenState extends State<CampaignScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(title: const Text('Campaign Rules'), backgroundColor: Colors.white, elevation: 0),
+      appBar: AppBar(title: const Text('Campaign Rules')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: GameTheme.carrot))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('The AI creates the actual offer. You set the rules.',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                  const SizedBox(height: 16),
-                  _card(Column(
+                  const Text(
+                    'The AI creates the actual offer. You set the rules.',
+                    style: TextStyle(color: GameTheme.bark, fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                  const SizedBox(height: 14),
+                  _panel(Column(
                     children: [
                       _SwitchRow('Campaign Active', _active, (v) => setState(() => _active = v)),
+                      const Divider(color: GameTheme.wheat, height: 20),
                       _SwitchRow('Automatic Coupons', _autoEnabled, (v) => setState(() => _autoEnabled = v)),
                     ],
                   )),
                   const SizedBox(height: 12),
-                  _card(Column(
+                  _panel(Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Campaign Goal', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const Text('Campaign Goal', style: TextStyle(fontWeight: FontWeight.w900, color: GameTheme.ink)),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
+                        runSpacing: 6,
                         children: {
                           'fill_quiet_hours': 'Fill Quiet Hours',
                           'clear_stock': 'Clear Stock',
-                          'new_customers': 'Attract New Customers',
+                          'new_customers': 'New Customers',
                         }.entries.map((e) => ChoiceChip(
                           label: Text(e.value),
                           selected: _goal == e.key,
                           onSelected: (_) => setState(() => _goal = e.key),
-                          selectedColor: const Color(0xFFF97316),
-                          labelStyle: TextStyle(color: _goal == e.key ? Colors.white : null),
                         )).toList(),
                       ),
                     ],
                   )),
                   const SizedBox(height: 12),
-                  _card(Column(
+                  _panel(Column(
                     children: [
-                      _NumField('Max Discount (%)', _maxDiscount, suffix: '%'),
+                      _NumField('Max Discount', _maxDiscount, suffix: '%'),
                       const SizedBox(height: 12),
                       _NumField('Max Cashback per Coupon', _maxCashback, prefix: '€'),
                       const SizedBox(height: 12),
@@ -146,29 +149,31 @@ class _CampaignScreenState extends State<CampaignScreen> {
                     ],
                   )),
                   const SizedBox(height: 12),
-                  _card(Column(
+                  _panel(Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Quiet Hours', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const Text('Quiet Hours', style: TextStyle(fontWeight: FontWeight.w900, color: GameTheme.ink)),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
+                        runSpacing: 6,
                         children: _allQuietHours.map((h) => FilterChip(
                           label: Text(h),
                           selected: _quietHours.contains(h),
                           onSelected: (v) => setState(() => v ? _quietHours.add(h) : _quietHours.remove(h)),
-                          selectedColor: const Color(0xFFF97316).withOpacity(0.2),
                         )).toList(),
                       ),
                     ],
                   )),
                   const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: _saving ? null : _save,
-                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF97316), padding: const EdgeInsets.symmetric(vertical: 14)),
-                    child: _saving
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Save Campaign Rules', style: TextStyle(fontSize: 16)),
+                  SizedBox(
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: _saving
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Save Campaign Rules', style: TextStyle(fontSize: 16)),
+                    ),
                   ),
                 ],
               ),
@@ -176,9 +181,9 @@ class _CampaignScreenState extends State<CampaignScreen> {
     );
   }
 
-  Widget _card(Widget child) => Container(
+  Widget _panel(Widget child) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+    decoration: GameTheme.panel(color: GameTheme.parchment),
     child: child,
   );
 }
@@ -187,15 +192,14 @@ class _SwitchRow extends StatelessWidget {
   final String label;
   final bool value;
   final void Function(bool) onChanged;
-
   const _SwitchRow(this.label, this.value, this.onChanged);
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-      Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFF97316)),
+      Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: GameTheme.ink)),
+      Switch(value: value, onChanged: onChanged),
     ],
   );
 }
@@ -204,7 +208,6 @@ class _NumField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final String? prefix, suffix;
-
   const _NumField(this.label, this.controller, {this.prefix, this.suffix});
 
   @override
@@ -215,7 +218,6 @@ class _NumField extends StatelessWidget {
       labelText: label,
       prefixText: prefix,
       suffixText: suffix,
-      border: const OutlineInputBorder(),
       isDense: true,
     ),
   );
